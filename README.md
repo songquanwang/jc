@@ -1,5 +1,5 @@
 
-# Kaggle_CrowdFlower
+# jc competion
 
 1st Place Solution for [Search Results Relevance Competition on Kaggle](https://www.kaggle.com/c/crowdflower-search-relevance)
 
