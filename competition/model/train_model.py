@@ -17,34 +17,32 @@ __author__
 import sys
 import csv
 import os
-import cPickle
+
 import numpy as np
 import pandas as pd
+
 import xgboost as xgb
 from scipy.sparse import hstack
+
 ## sklearn
-from sklearn.base import BaseEstimator
 from sklearn.datasets import load_svmlight_file, dump_svmlight_file
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.linear_model import Ridge, Lasso, LassoLars, ElasticNet
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 #梯度自举树，也是gdbt的实现
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import SVR
-from sklearn.pipeline import Pipeline
 ## hyperopt
-from hyperopt import hp
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+from hyperopt import fmin, tpe, STATUS_OK, Trials
 ## keras
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
-from keras.utils import np_utils, generic_utils
 ## cutomized module
-from model_library_config import feat_folders, feat_names, param_spaces, int_feat
+from competition.conf.model_library_config import feat_folders, feat_names, param_spaces, int_feat
 sys.path.append("../")
 from param_config import config
 from ml_metrics import quadratic_weighted_kappa

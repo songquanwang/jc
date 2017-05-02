@@ -19,7 +19,7 @@ import sys
 import numpy as np
 import pandas as pd
 from utils import *
-from ensemble_selection import *
+from competition.ensemble.ensemble_selection import *
 from model_library_config import feat_folders, feat_names
 
 
