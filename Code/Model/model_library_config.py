@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -155,7 +155,7 @@ param_space_rank_xgb_linear = {
     "max_evals": hyperopt_param["xgb_max_evals"],
 }
 
-## softkappa with linear booster £»num_class ÓÃÔÚsoftmaxÀï£¬ÔõÃ´ÓÃÔÚÕâÁË£¿
+## softkappa with linear booster ï¼›num_class ç”¨åœ¨softmaxé‡Œï¼Œæ€ä¹ˆç”¨åœ¨è¿™äº†ï¼Ÿ
 param_space_kappa_xgb_linear = {
     'task': 'softkappa',
     'booster': 'gblinear',
@@ -232,7 +232,7 @@ param_space_reg_skl_etr = {
     "max_evals": hyperopt_param["etr_max_evals"],
 }
 
-## gradient boosting regressor Ò»ÖÖ¸úxgboostÀàËÆµÄÌİ¶È×Ô¾ÙÊ÷
+## gradient boosting regressor ä¸€ç§è·Ÿxgboostç±»ä¼¼çš„æ¢¯åº¦è‡ªä¸¾æ ‘
 param_space_reg_skl_gbm = {
     'task': 'reg_skl_gbm',
     'n_estimators': hp.quniform("n_estimators", skl_min_n_estimators, skl_max_n_estimators, skl_n_estimators_step),

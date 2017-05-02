@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -30,7 +30,7 @@ def get_sample_indices_by_relevance(dfTrain, additional_key=None):
 		key: (additional_key, median_relevance)
 		val: list of sample indices
 	"""
-	#´ÓÁã¿ªÊ¼±àºÅ
+	#ä»é›¶å¼€å§‹ç¼–å·
 	dfTrain["sample_index"] = range(dfTrain.shape[0])
 	group_key = ["median_relevance"]
 	if additional_key != None:

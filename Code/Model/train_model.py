@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -30,7 +30,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.linear_model import Ridge, Lasso, LassoLars, ElasticNet
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-#Ìİ¶È×Ô¾ÙÊ÷£¬Ò²ÊÇgdbtµÄÊµÏÖ
+#æ¢¯åº¦è‡ªä¸¾æ ‘ï¼Œä¹Ÿæ˜¯gdbtçš„å®ç°
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.svm import SVR
 from sklearn.pipeline import Pipeline
@@ -107,7 +107,7 @@ def hyperopt_wrapper(param, feat_folder, feat_name):
         "%.6f" % kappa_cv_mean, 
         "%.6f" % kappa_cv_std
     ]
-    #ÈÕÖ¾ÖĞÊä³ö²ÎÊıÖµ ´ÎÊı ¾ùÖµ ±ê×¼²î Öµ1 Öµ2 ...ÖµN
+    #æ—¥å¿—ä¸­è¾“å‡ºå‚æ•°å€¼ æ¬¡æ•° å‡å€¼ æ ‡å‡†å·® å€¼1 å€¼2 ...å€¼N
     for k,v in sorted(param.items()):
         var_to_log.append("%s" % v)
     writer.writerow(var_to_log)
@@ -147,7 +147,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             ## load feat
             X_train, labels_train = load_svmlight_file(feat_train_path)
             X_valid, labels_valid = load_svmlight_file(feat_valid_path)
-            #ÑÓÕ¹array
+            #å»¶å±•array
             if X_valid.shape[1] < X_train.shape[1]:
                 X_valid = hstack([X_valid, np.zeros((X_valid.shape[0], X_train.shape[1]-X_valid.shape[1]))])
             elif X_valid.shape[1] > X_train.shape[1]:
@@ -179,18 +179,18 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             ##############
             ## you can use bagging to stabilize the predictions
             preds_bagging = np.zeros((numValid, bagging_size), dtype=float)
-            # ¸ù¾İ bootstrap_replacement ³õÊ¼»¯ index_base index_meta
+            # æ ¹æ® bootstrap_replacement åˆå§‹åŒ– index_base index_meta
             for n in range(bagging_size):
                 if bootstrap_replacement:
                     sampleSize = int(numTrain*bootstrap_ratio)
-                    # numTrain -- sampleSize ¸öËæ»úÊı×ÖÊı×éarray
+                    # numTrain -- sampleSize ä¸ªéšæœºæ•°å­—æ•°ç»„array
                     index_base = rng.randint(numTrain, size=sampleSize)
                     index_meta = [i for i in range(numTrain) if i not in index_base]
                 else:
                     randnum = rng.uniform(size=numTrain)
                     index_base = [i for i in range(numTrain) if randnum[i] < bootstrap_ratio]
                     index_meta = [i for i in range(numTrain) if randnum[i] >= bootstrap_ratio]
-             # Èç¹û xgboost Ôò³õÊ¼»¯ dvalid_base dtrain_base
+             # å¦‚æœ xgboost åˆ™åˆå§‹åŒ– dvalid_base dtrain_base
                 if param.has_key("booster"):
                     dvalid_base = xgb.DMatrix(X_valid, label=labels_valid, weight=weight_valid)
                     dtrain_base = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=weight_train[index_base])
@@ -211,7 +211,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     #(6688, 4)
                     pred = bst.predict(dvalid_base)
                     w = np.asarray(range(1,numOfClass+1))
-                    #¼ÓÈ¨Ïà³Ë £¿ÀÛ¼Ó
+                    #åŠ æƒç›¸ä¹˜ ï¼Ÿç´¯åŠ 
                     pred = pred * w[np.newaxis,:]
                     pred = np.sum(pred, axis=1)
 
@@ -268,7 +268,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     pred = gbm.predict(X_valid.toarray())
 
                 elif param['task'] == "clf_skl_lr":
-                    ## classification with sklearn logistic regression   Ö»Ñ°ÕÒÒ»¸ö²ÎÊıµÄ×îÓÅ²ÎÊı
+                    ## classification with sklearn logistic regression   åªå¯»æ‰¾ä¸€ä¸ªå‚æ•°çš„æœ€ä¼˜å‚æ•°
                     lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                             C=param['C'], fit_intercept=True, intercept_scaling=1.0,
                                             class_weight='auto', random_state=param['random_state'])
@@ -836,18 +836,18 @@ if __name__ == "__main__":
     log_path = "%s/Log" % output_path
     if not os.path.exists(log_path):
         os.makedirs(log_path)
-    #ÅĞ¶Ï´«Èë²ÎÊıÖĞµÄmodelsÊÇ²»ÊÇÒÑ¾­ÅäÖÃµÄmodels
+    #åˆ¤æ–­ä¼ å…¥å‚æ•°ä¸­çš„modelsæ˜¯ä¸æ˜¯å·²ç»é…ç½®çš„models
     for feat_name, feat_folder in zip(feat_names, feat_folders):
         if not check_model(specified_models, feat_name):
             continue
         param_space = param_spaces[feat_name]
-        #¼ÇÂ¼ÈÕÖ¾ µ½output/***_hyperopt.log
+        #è®°å½•æ—¥å¿— åˆ°output/***_hyperopt.log
 
         log_file = "%s/%s_hyperopt.log" % (log_path, feat_name)
         log_handler = open( log_file, 'wb' )
         writer = csv.writer( log_handler )
 
-        #Ã¿ĞĞÈÕÖ¾¶¼°üº¬ 'trial_counter', 'kappa_mean', 'kappa_std' Èı¸ö×Ö¶Î + Ä£ĞÍ²ÎÊı
+        #æ¯è¡Œæ—¥å¿—éƒ½åŒ…å« 'trial_counter', 'kappa_mean', 'kappa_std' ä¸‰ä¸ªå­—æ®µ + æ¨¡å‹å‚æ•°
         headers = [ 'trial_counter', 'kappa_mean', 'kappa_std' ]
         for k,v in sorted(param_space.items()):
             headers.append(k)
@@ -862,7 +862,7 @@ if __name__ == "__main__":
         objective = lambda p: hyperopt_wrapper(p, feat_folder, feat_name)
         best_params = fmin(objective, param_space, algo=tpe.suggest,
                            trials=trials, max_evals=param_space["max_evals"])
-        #°Ñbest_params°üº¬µÄÊı×ÖÊôĞÔ×ª³Éint
+        #æŠŠbest_paramsåŒ…å«çš„æ•°å­—å±æ€§è½¬æˆint
         for f in int_feat:
             if best_params.has_key(f):
                 best_params[f] = int(best_params[f])
@@ -870,12 +870,12 @@ if __name__ == "__main__":
         print("Best params")
         for k,v in best_params.items():
             print "        %s: %s" % (k,v)
-        #»ñÈ¡³¢ÊÔµÄlosses
+        #è·å–å°è¯•çš„losses
         trial_kappas = -np.asarray(trials.losses(), dtype=float)
         best_kappa_mean = max(trial_kappas)
-        #where·µ»ØÁ½¸öÎ¬¶ÈµÄ×ø±ê
+        #whereè¿”å›ä¸¤ä¸ªç»´åº¦çš„åæ ‡
         ind = np.where(trial_kappas == best_kappa_mean)[0][0]
-        #ÕÒµ½×îÓÅ²ÎÊıµÄstd
+        #æ‰¾åˆ°æœ€ä¼˜å‚æ•°çš„std
         best_kappa_std = trials.trial_attachments(trials.trials[ind])['std']
         print("Kappa stats")
         print("        Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))

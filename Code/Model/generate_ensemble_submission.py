@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -53,12 +53,12 @@ for feat_name,id_size in zip(feat_names, id_sizes):
     ## get the top 10 model ids
     log_file = "%s/Log/%s_hyperopt.log" % (model_folder, feat_name)
     try:
-        #¶ÁÈ¡Ä£ĞÍÆ½¾ù²ÎÊı
+        #è¯»å–æ¨¡å‹å¹³å‡å‚æ•°
         dfLog = pd.read_csv(log_file)
-        # kappa mean½µĞòÅÅÁĞ
+        # kappa meané™åºæ’åˆ—
         dfLog.sort("kappa_mean", ascending=False, inplace=True)
         ind = np.min([id_size, dfLog.shape[0]])
-        #È¡³öÇ°Ê®ĞĞ Ò²¾ÍÊÇµ±Ç°Ä£ĞÍµÄÇ°Ê®Ãû³¢ÊÔÀÛ¼Óµ½Êı×é
+        #å–å‡ºå‰åè¡Œ ä¹Ÿå°±æ˜¯å½“å‰æ¨¡å‹çš„å‰ååå°è¯•ç´¯åŠ åˆ°æ•°ç»„
         ids = dfLog.iloc[:ind]["trial_counter"]
         #print dfLog[:ind]
         model_list += ["%s_[Id@%d]" % (feat_name, id) for id in ids]

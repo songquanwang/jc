@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     def cat_text(x):
         res = '%s %s %s' % (x['query'], x['product_title'], x['product_description'])
         return res
-    #Ìí¼ÓÒ»¸öall_test,±£´æËùÓĞÎÄ±¾
+    #æ·»åŠ ä¸€ä¸ªall_test,ä¿å­˜æ‰€æœ‰æ–‡æœ¬
     dfTrain["all_text"] = list(dfTrain.apply(cat_text, axis=1))
     dfTest["all_text"] = list(dfTest.apply(cat_text, axis=1))
 

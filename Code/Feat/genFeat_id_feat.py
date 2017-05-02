@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             for id_name in id_names:
                 lb = LabelBinarizer(sparse_output=True)
                 X_train = lb.fit_transform(dfTrain.iloc[trainInd][id_name])
-                #Èç¹ûvalidInt ºÍtrainIntÃ»ÓĞÏàÍ¬ Ôòtransform() X_trainÃ»ÓĞµÄclasses_»áÊÇÁãÏòÁ¿
+                #å¦‚æœvalidInt å’ŒtrainIntæ²¡æœ‰ç›¸åŒ åˆ™transform() X_trainæ²¡æœ‰çš„classes_ä¼šæ˜¯é›¶å‘é‡
                 X_valid = lb.transform(dfTrain.iloc[validInd][id_name])
                 with open("%s/train.%s.feat.pkl" % (path, id_name), "wb") as f:
                     cPickle.dump(X_train, f, -1)

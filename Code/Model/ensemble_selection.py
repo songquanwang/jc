@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -78,7 +78,7 @@ def ensembleSelectionObj(param, p1_list, weight1, p2_list, true_label_list, cdf_
 def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm_prefix,
                  hypteropt_max_evals=10, w_min=-1., w_max=1.,
                   bagging_replacement=False, bagging_fraction=0.5, bagging_size=10, init_top_k=5, prunning_fraction=0.2):
-    ## load all the prediction :maxNumValid Ô¤²â½á¹û¼Ù¶¨ÊÇ12000ĞĞ
+    ## load all the prediction :maxNumValid é¢„æµ‹ç»“æœå‡å®šæ˜¯12000è¡Œ
     maxNumValid = 12000
     pred_list_valid = np.zeros((len(model_list), config.n_runs, config.n_folds, maxNumValid), dtype=float)
     Y_list_valid = np.zeros((config.n_runs, config.n_folds, maxNumValid), dtype=float)
@@ -120,15 +120,15 @@ def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm
                 kappa_cv[run][fold] = quadratic_weighted_kappa(score, Y_list_valid[run,fold,:numValidMatrix[run][fold]])     
 
         print("kappa: %.6f" % np.mean(kappa_cv))
-        #Ëã³öÃ¿¸öÄ£ĞÍµÄÆ½¾ùkappa_cv
+        #ç®—å‡ºæ¯ä¸ªæ¨¡å‹çš„å¹³å‡kappa_cv
         kappa_list[model] = np.mean(kappa_cv)
 
     cdf_mean_init = np.mean(np.mean(cdf_list_valid, axis=0), axis=0)
     cdf_mean_init = cdf_mean_init.tolist()
     cdf_mean_init.insert(0, 0)
-    #diff  1 2 4 --->1 2  ;°ÑÀÛ¼ÆÖµ²ğ·Ö³É ¸÷¸öÇø¼äÖµ
+    #diff  1 2 4 --->1 2  ;æŠŠç´¯è®¡å€¼æ‹†åˆ†æˆ å„ä¸ªåŒºé—´å€¼
     pdf_mean_init = np.diff(np.asarray(cdf_mean_init))
-    #°´ÕÕ  kappa_cvÖµ ÅÅĞò-ÖÃÄæ£»´óµÄ¿¿Ç°
+    #æŒ‰ç…§  kappa_cvå€¼ æ’åº-ç½®é€†ï¼›å¤§çš„é å‰
     sorted_models = sorted(kappa_list.items(), key=lambda x: x[1])[::-1]
         
     # greedy ensemble
@@ -141,11 +141,11 @@ def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm
     for bagging_iter in range(bagging_size):
         rng = np.random.RandomState(2015 + 100 * bagging_iter)
         if bagging_replacement:
-            #Ëæ»ú³éÈ¡
+            #éšæœºæŠ½å–
             sampleSize = int(num_model*bagging_fraction)
             index_base = rng.randint(num_model, size=sampleSize)
         else:
-            #¾ùÔÈ·Ö²¼
+            #å‡åŒ€åˆ†å¸ƒ
             randnum = rng.uniform(size=num_model)
             index_base = [i for i in range(num_model) if randnum[i] < bagging_fraction]
         this_sorted_models = [sorted_models[i] for i in sorted(index_base)]
@@ -196,7 +196,7 @@ def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm
 
                 ## hyperopt for the best weight
                 trials = Trials()
-                #²»Í¬Ä£ĞÍµÄÈ¨ÖØ
+                #ä¸åŒæ¨¡å‹çš„æƒé‡
                 param_space = {
                     'weight2': hp.uniform('weight2', w_min, w_max)
                 }

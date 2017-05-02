@@ -1,8 +1,7 @@
 __author__ = 'songquanwang'
 
 import numpy as np
-
-
+#coding:utf-8
 def confusion_matrix(rater_a, rater_b, min_rating=None, max_rating=None):
     """
     Returns the confusion matrix between rater's ratings

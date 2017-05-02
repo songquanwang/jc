@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -21,8 +21,8 @@ import numpy as np
 def confusion_matrix(rater_a, rater_b, min_rating=None, max_rating=None):
     """
     Returns the confusion matrix between rater's ratings
-    ¾ØÕó×ø±ê´ú±í ²î±ğ£¬¾ØÕóÖµ´ú±í ¸Ã²î±ğµÄÈ¨ÖØ£¨´ÎÊı£©
-    [0,0]/[1,1]/[2,2]...[N,N]Õ¼±ÈÔ½´óÔ½ºÃ
+    çŸ©é˜µåæ ‡ä»£è¡¨ å·®åˆ«ï¼ŒçŸ©é˜µå€¼ä»£è¡¨ è¯¥å·®åˆ«çš„æƒé‡ï¼ˆæ¬¡æ•°ï¼‰
+    [0,0]/[1,1]/[2,2]...[N,N]å æ¯”è¶Šå¤§è¶Šå¥½
     """
     assert(len(rater_a) == len(rater_b))
     if min_rating is None:
@@ -40,7 +40,7 @@ def confusion_matrix(rater_a, rater_b, min_rating=None, max_rating=None):
 def histogram(ratings, min_rating=None, max_rating=None):
     """
     Returns the counts of each type of rating that a rater made
-     0 1 2 4  ÆµÊıÊı×é
+     0 1 2 4  é¢‘æ•°æ•°ç»„
     [100,33,44,89]
     """
     if min_rating is None:
@@ -54,7 +54,7 @@ def histogram(ratings, min_rating=None, max_rating=None):
         hist_ratings[r - min_rating] += 1
     return hist_ratings
 
-#´úÂëÖĞ²ÉÓÃµÄÕâÖÖ·½Ê½
+#ä»£ç ä¸­é‡‡ç”¨çš„è¿™ç§æ–¹å¼
 def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
     """
     Calculates the quadratic weighted kappa
@@ -90,9 +90,9 @@ def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None)
         max_rating = max(max(rater_a), max(rater_b))
     conf_mat = confusion_matrix(rater_a, rater_b,
                                 min_rating, max_rating)
-    # 1 2 3 4 ËÄ¸öÆ·Àà
+    # 1 2 3 4 å››ä¸ªå“ç±»
     num_ratings = len(conf_mat)
-    # ±È½ÏµÄlabel×ÜÊı
+    # æ¯”è¾ƒçš„labelæ€»æ•°
     num_scored_items = float(len(rater_a))
 
     hist_rater_a = histogram(rater_a, min_rating, max_rating)
@@ -103,14 +103,14 @@ def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None)
 
     for i in range(num_ratings):
         for j in range(num_ratings):
-            # ÀíÂÛÆµÊı
+            # ç†è®ºé¢‘æ•°
             expected_count = (hist_rater_a[i] * hist_rater_b[j]
                               / num_scored_items)
-            #È¨ÖØ [£¨i-j)/(num-1)]^2
+            #æƒé‡ [ï¼ˆi-j)/(num-1)]^2
             d = pow(i - j, 2.0) / pow(num_ratings - 1, 2.0)
-            #È¨ÖØ * Êµ¼ÊÆµÊı
+            #æƒé‡ * å®é™…é¢‘æ•°
             numerator += d * conf_mat[i][j] / num_scored_items
-            #È¨ÖØ * ÆÚÍûÆµÊı
+            #æƒé‡ * æœŸæœ›é¢‘æ•°
             denominator += d * expected_count / num_scored_items
 
     return 1.0 - numerator / denominator

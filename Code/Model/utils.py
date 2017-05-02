@@ -1,3 +1,4 @@
+#coding:utf-8
 """
 __file__
 
@@ -37,8 +38,8 @@ from param_config import config
 #### sigmoid
 def sigmoid(score):
     """
-    ·µ»Øsigmoid Öµ
-    :param score: ¿ÉÒÔÊÇÏòÁ¿ Ò²¿ÉÒÔÊÇÒ»¸öÖµ£»µ«²»¿ÉÒÔÖ±½ÓÊÇÊı×é[]
+    è¿”å›sigmoid å€¼
+    :param score: å¯ä»¥æ˜¯å‘é‡ ä¹Ÿå¯ä»¥æ˜¯ä¸€ä¸ªå€¼ï¼›ä½†ä¸å¯ä»¥ç›´æ¥æ˜¯æ•°ç»„[]
     :return:
     """
     p = 1. / (1. + np.exp(-score))
@@ -48,13 +49,13 @@ def sigmoid(score):
 #### softmax
 def softmax(score):
     """
-    score¸ñÊ½
+    scoreæ ¼å¼
      array([[-0.66825223,  0.2887553 ,  3.40399051,  1.01323175],
        [-0.07798982,  0.44937038,  1.42988169,  0.74605137],
        [-0.62874174,  0.29706955,  3.33471489,  1.01480103]
 
        ])
-    ×¢Òâ£ºnp.max([],axis=0) Ä¬ÈÏÊÇÕû¸öÊı×é×î´óÖµ
+    æ³¨æ„ï¼šnp.max([],axis=0) é»˜è®¤æ˜¯æ•´ä¸ªæ•°ç»„æœ€å¤§å€¼
     :param score:
     :return:
     """
@@ -284,11 +285,11 @@ def softkappaObj(preds, dtrain, hess_scale=0.000125):
 ## Decoding Method ##
 #####################
 #### decoding method for ranking and regression
-# cdf array([ 0.07348703,  0.22564841,  0.38818444,  1.        ]) ¶Ôpred ÓÉĞ¡µ½´óÅÅĞòË÷Òıºó£¬°´ÕÕ cdf±ÈÀı ¶Ô pred ½øĞĞ¸³Öµ 1 2 3 4
+# cdf array([ 0.07348703,  0.22564841,  0.38818444,  1.        ]) å¯¹pred ç”±å°åˆ°å¤§æ’åºç´¢å¼•åï¼ŒæŒ‰ç…§ cdfæ¯”ä¾‹ å¯¹ pred è¿›è¡Œèµ‹å€¼ 1 2 3 4
 def getScore(pred, cdf, valid=False):
     num = pred.shape[0]
     output = np.asarray([4] * num, dtype=int)
-    # ÅÅĞò
+    # æ’åº
     rank = pred.argsort()
     output[rank[:int(num * cdf[0] - 1)]] = 1
     output[rank[int(num * cdf[0]):int(num * cdf[1] - 1)]] = 2
@@ -313,7 +314,7 @@ def getTestScore(pred, cutoff):
     return output
 
 
-#### decoding method for four class probabilities (e.g., softmax classification) Ã»ÓÃµ½
+#### decoding method for four class probabilities (e.g., softmax classification) æ²¡ç”¨åˆ°
 def getClfScore(preds, cdf):
     w = np.asarray(np.arange(1, config.n_classes + 1))
     preds = preds * w[np.newaxis, :]

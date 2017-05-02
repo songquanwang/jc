@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -48,7 +48,7 @@ dfTest["relevance_variance"] = np.zeros((num_test))
 dfTrain["index"] = np.arange(num_train)
 dfTest["index"] = np.arange(num_test)
 
-## one-hot encode the median_relevance £ºdummy
+## one-hot encode the median_relevance ï¼šdummy
 for i in range(config.n_classes):
     dfTrain["median_relevance_%d" % (i+1)] = 0
     dfTrain["median_relevance_%d" % (i+1)][dfTrain["median_relevance"]==(i+1)] = 1

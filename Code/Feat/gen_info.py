@@ -1,4 +1,4 @@
-
+#coding:utf-8
 """
 __file__
 
@@ -47,7 +47,7 @@ def gen_info(feat_path_name):
     # change it to zero-based for classification
     Y = dfTrain_original["median_relevance"].values - 1
 
-    ## load pre-defined stratified k-fold index     stratifiedKFold.query.pklÎÄ¼şºÎÀ´£¿
+    ## load pre-defined stratified k-fold index     stratifiedKFold.query.pklæ–‡ä»¶ä½•æ¥ï¼Ÿ
     with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
         skf = cPickle.load(f)
         
@@ -69,9 +69,9 @@ def gen_info(feat_path_name):
             ##########################
             raise_to = 0.5
             var = dfTrain["relevance_variance"].values
-            #×î´ó±ê×¼²î
+            #æœ€å¤§æ ‡å‡†å·®
             max_var = np.max(var[trainInd]**raise_to)
-            #     [1+£¨×î´ó±ê×¼²î-±ê×¼²îÊı×é£©/×î´ó±ê×¼²î]/2
+            #     [1+ï¼ˆæœ€å¤§æ ‡å‡†å·®-æ ‡å‡†å·®æ•°ç»„ï¼‰/æœ€å¤§æ ‡å‡†å·®]/2
             weight = (1 + np.power(((max_var - var**raise_to) / max_var),1)) / 2.
             #weight = (max_var - var**raise_to) / max_var
             np.savetxt("%s/train.feat.weight" % path, weight[trainInd], fmt="%.6f")
