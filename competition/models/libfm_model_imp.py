@@ -52,7 +52,7 @@ class GbdtModelImp(ModelInter):
         # 初始化run fold的各种集合的矩阵
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
-    def train_predict(self, set_obj):
+    def train_predict(self, set_obj,all =False):
         """
         数据训练
         :param train_end_date:
@@ -71,7 +71,7 @@ class GbdtModelImp(ModelInter):
 
         ## train fm
         cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % ( \
-            libfm_exe, feat_train_path + ".tmp", feat_test_path + ".tmp", raw_pred_test_path, \
+            model_param_conf.libfm_exe, set_obj.feat_train_path + ".tmp", set_obj.feat_test_path + ".tmp", raw_pred_test_path, \
             param['dim'], param['iter'])
         os.system(cmd)
         os.remove(feat_train_path + ".tmp")

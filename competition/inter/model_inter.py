@@ -22,6 +22,7 @@ class ModelInter(object):
         self.param = param
         self.feat_folder = feat_folder
         self.feat_name = feat_name
+        self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
         self.trial_counter = 0
         log_file = "%s/Log/%s_hyperopt.log" % (model_param_conf.output_path, feat_name)
         self.log_handler = open(log_file, 'wb')
@@ -169,6 +170,21 @@ class ModelInter(object):
 
     def out_put_run_fold(self, run, fold, bagging, feat_name, trial_counter, kappa_valid, X_train, Y_valid, pred_raw,
                          pred_rank, kappa_cv):
+        """
+
+        :param run:
+        :param fold:
+        :param bagging:
+        :param feat_name:
+        :param trial_counter:
+        :param kappa_valid:
+        :param X_train:
+        :param Y_valid:
+        :param pred_raw:
+        :param pred_rank:
+        :param kappa_cv: out parameter;upate and return
+        :return:
+        """
         save_path = "%s/Run%d/Fold%d" % (model_param_conf.output_path, run, fold)
         raw_pred_valid_path = "%s/valid.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
         rank_pred_valid_path = "%s/valid.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
