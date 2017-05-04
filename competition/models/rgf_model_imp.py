@@ -7,10 +7,6 @@ import numpy as np
 
 from competition.inter.model_inter import ModelInter
 import competition.conf.model_params_conf as model_param_conf
-from competition.conf.param_config import config
-
-global trial_counter
-global log_handler
 
 
 class GbdtModelImp(ModelInter):

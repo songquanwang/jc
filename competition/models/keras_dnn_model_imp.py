@@ -10,11 +10,6 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
-## cutomized module
-from competition.conf.param_config import config
-
-global trial_counter
-global log_handler
 
 
 class GbdtModelImp(ModelInter):

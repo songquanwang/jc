@@ -16,9 +16,6 @@ from sklearn.svm import SVR
 
 import competition.conf.model_params_conf as model_param_conf
 
-global trial_counter
-global log_handler
-
 
 class GbdtModelImp(ModelInter):
     def __init__(self, param, feat_folder, feat_name):
