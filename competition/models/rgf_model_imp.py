@@ -10,6 +10,7 @@ import xgboost as xgb
 # 梯度自举树，也是gdbt的实现
 ## hyperopt
 ## keras
+import os
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 
@@ -25,72 +26,118 @@ class GbdtModelImp(ModelInter):
         # 初始化run fold的各种集合的矩阵
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
-    def train_predict(self, set_obj):
+    def train_predict(self, matrix, all=False):
         """
         数据训练
         :param train_end_date:
         :return:
         """
-        if self.param["task"] in ["regression", "ranking"]:
-            pred = self.reg_rank_predict(set_obj)
-        elif self.param["task"] in ["softmax"]:
-            pred = self.soft_max_predict(set_obj)
-        elif self.param["task"] in ["softkappa"]:
-            pred = self.soft_softkappa_predict(set_obj)
-        elif self.param["task"] in ["ebc"]:
-            pred = self.ebc_predict(set_obj)
-        elif self.param["task"] in ["cocr"]:
-            pred = self.cocr_predict(set_obj)
+        param = matrix.param
+        ## to array
+        X_train = matrix.X_train.toarray()
+        train_x_fn = matrix.feat_train_path + ".x"
+        train_y_fn = matrix.feat_train_path + ".y"
+        model_fn_prefix = "rgf_model"
+        np.savetxt(train_x_fn, X_train[matrix.index_base], fmt="%.6f", delimiter='\t')
+        np.savetxt(train_y_fn, matrix.labels_train[matrix.index_base], fmt="%d", delimiter='\t')
+        if all:
+            ## regression with regularized greedy forest (rgf)
+            X_test = matrix.X_test.toarray()
+            test_x_fn = matrix.feat_test_path + ".x"
+            test_pred_fn = matrix.feat_test_path + ".pred"
+            np.savetxt(test_x_fn, X_test, fmt="%.6f", delimiter='\t')
+            # np.savetxt(test_y_fn, labels_test, fmt="%d", delimiter='\t')
+            pars = [
+                "train_x_fn=", train_x_fn, "\n",
+                "train_y_fn=", train_y_fn, "\n",
+                # "train_w_fn=",weight_train_path,"\n",
+                "model_fn_prefix=", model_fn_prefix, "\n",
+                "reg_L2=", param['reg_L2'], "\n",
+                # "reg_depth=", 1.01, "\n",
+                "algorithm=", "RGF", "\n",
+                "loss=", "LS", "\n",
+                # "opt_interval=", 100, "\n",
+                "test_interval=", param['max_leaf_forest'], "\n",
+                "max_leaf_forest=", param['max_leaf_forest'], "\n",
+                "num_iteration_opt=", param['num_iteration_opt'], "\n",
+                "num_tree_search=", param['num_tree_search'], "\n",
+                "min_pop=", param['min_pop'], "\n",
+                "opt_interval=", param['opt_interval'], "\n",
+                "opt_stepsize=", param['opt_stepsize'], "\n",
+                "NormalizeTarget"
+            ]
+            pars = "".join([str(p) for p in pars])
+            rfg_setting_train = "./rfg_setting_train"
+            with open(rfg_setting_train + ".inp", "wb") as f:
+                f.write(pars)
+            ## train fm
+            cmd = "perl %s %s train %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+            # print cmd
+            os.system(cmd)
+            model_fn = model_fn_prefix + "-01"
+            pars = [
+                "test_x_fn=", test_x_fn, "\n",
+                "model_fn=", model_fn, "\n",
+                "prediction_fn=", test_pred_fn
+            ]
+            pars = "".join([str(p) for p in pars])
+            rfg_setting_test = "./rfg_setting_test"
+            with open(rfg_setting_test + ".inp", "wb") as f:
+                f.write(pars)
+            cmd = "perl %s %s predict %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_test)
+            # print cmd
+            os.system(cmd)
+            pred = np.loadtxt(test_pred_fn, dtype=float)
 
-        return pred
+        else:
+            ## regression with regularized greedy forest (rgf)
+            X_valid = matrix.X_valid.toarray()
+            valid_x_fn = matrix.feat_valid_path + ".x"
+            valid_pred_fn = matrix.feat_valid_path + ".pred"
+            np.savetxt(valid_x_fn, X_valid, fmt="%.6f", delimiter='\t')
+            # np.savetxt(valid_y_fn, labels_valid, fmt="%d", delimiter='\t')
+            pars = [
+                "train_x_fn=", train_x_fn, "\n",
+                "train_y_fn=", train_y_fn, "\n",
+                # "train_w_fn=",weight_train_path,"\n",
+                "model_fn_prefix=", model_fn_prefix, "\n",
+                "reg_L2=", param['reg_L2'], "\n",
+                # "reg_depth=", 1.01, "\n",
+                "algorithm=", "RGF", "\n",
+                "loss=", "LS", "\n",
+                # "opt_interval=", 100, "\n",
+                "valid_interval=", param['max_leaf_forest'], "\n",
+                "max_leaf_forest=", param['max_leaf_forest'], "\n",
+                "num_iteration_opt=", param['num_iteration_opt'], "\n",
+                "num_tree_search=", param['num_tree_search'], "\n",
+                "min_pop=", param['min_pop'], "\n",
+                "opt_interval=", param['opt_interval'], "\n",
+                "opt_stepsize=", param['opt_stepsize'], "\n",
+                "NormalizeTarget"
+            ]
+            pars = "".join([str(p) for p in pars])
+            rfg_setting_train = "./rfg_setting_train"
+            with open(rfg_setting_train + ".inp", "wb") as f:
+                f.write(pars)
+            ## train fm
+            cmd = "perl %s %s train %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+            # print cmd
+            os.system(cmd)
+            model_fn = model_fn_prefix + "-01"
+            pars = [
+                "test_x_fn=", valid_x_fn, "\n",
+                "model_fn=", model_fn, "\n",
+                "prediction_fn=", valid_pred_fn
+            ]
+            pars = "".join([str(p) for p in pars])
+            rfg_setting_valid = "./rfg_setting_valid"
+            with open(rfg_setting_valid + ".inp", "wb") as f:
+                f.write(pars)
+            cmd = "perl %s %s predict %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_valid)
+            # print cmd
+            os.system(cmd)
+            pred = np.loadtxt(valid_pred_fn, dtype=float)
 
-    def reg_rank_predict(self, set_obj):
-        evalerror_regrank_valid = lambda preds, dtrain: utils.evalerror_regrank_cdf(preds, dtrain, set_obj.cdf_valid)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist,
-                        feval=evalerror_regrank_valid)
-        pred = bst.predict(set_obj.dvalid_base)
-        return pred
-
-    def soft_max_predict(self, set_obj):
-        evalerror_softmax_valid = lambda preds, dtrain: utils.evalerror_softmax_cdf(preds, dtrain, set_obj.cdf_valid)
-        ## softmax regression with xgboost
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist,
-                        feval=evalerror_softmax_valid)
-        # (6688, 4)
-        pred = bst.predict(set_obj.dvalid_base)
-        w = np.asarray(range(1, model_param_conf.num_of_class + 1))
-        # 加权相乘 ？累加
-        pred = pred * w[np.newaxis, :]
-        pred = np.sum(pred, axis=1)
-        return pred
-
-    def soft_softkappa_predict(self, set_obj):
-        ## softkappa with xgboost
-        obj = lambda preds, dtrain: utils.softkappaObj(preds, dtrain, hess_scale=self.param['hess_scale'])
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_softkappa_valid)
-        pred = utils.softmax(bst.predict(set_obj.dvalid_base))
-        w = np.asarray(range(1, model_param_conf.num_of_class + 1))
-        pred = pred * w[np.newaxis, :]
-        pred = np.sum(pred, axis=1)
-        return pred
-
-    def ebc_predict(self, set_obj):
-        # ebc with xgboost
-        obj = lambda preds, dtrain: utils.ebcObj(preds, dtrain)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_ebc_valid)
-        pred = utils.sigmoid(bst.predict(set_obj.dvalid_base))
-        pred = utils.applyEBCRule(pred, hard_threshold=utils.ebc_hard_threshold)
-        return pred
-
-    def cocr_predict(self, set_obj):
-        ## cocr with xgboost
-        obj = lambda preds, dtrain: utils.cocrObj(preds, dtrain)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_cocr_valid)
-        pred = bst.predict(set_obj.dvalid_base)
-        pred = utils.applyCOCRRule(pred)
         return pred
 
     def get_predicts(self):

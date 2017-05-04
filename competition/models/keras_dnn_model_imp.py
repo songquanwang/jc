@@ -12,7 +12,16 @@ import xgboost as xgb
 ## keras
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
-
+from hyperopt import hp
+from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+from sklearn.preprocessing import StandardScaler
+## keras
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.normalization import BatchNormalization
+from keras.layers.advanced_activations import PReLU
+from keras.utils import np_utils, generic_utils
+## cutomized module
 from competition.conf.param_config import config
 
 global trial_counter
@@ -25,72 +34,88 @@ class GbdtModelImp(ModelInter):
         # 初始化run fold的各种集合的矩阵
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
-    def train_predict(self, set_obj):
+    def train_predict(self,matrix, all=False):
         """
         数据训练
         :param train_end_date:
         :return:
         """
-        if self.param["task"] in ["regression", "ranking"]:
-            pred = self.reg_rank_predict(set_obj)
-        elif self.param["task"] in ["softmax"]:
-            pred = self.soft_max_predict(set_obj)
-        elif self.param["task"] in ["softkappa"]:
-            pred = self.soft_softkappa_predict(set_obj)
-        elif self.param["task"] in ["ebc"]:
-            pred = self.ebc_predict(set_obj)
-        elif self.param["task"] in ["cocr"]:
-            pred = self.cocr_predict(set_obj)
+        param =matrix.param
+        ## regression with keras' deep neural networks
+        model = Sequential()
+        ## input layer
+        model.add(Dropout(param["input_dropout"]))
+        ## hidden layers
+        first = True
+        hidden_layers = param['hidden_layers']
+        ## scale
+        scaler = StandardScaler()
+        X_train = matrix.X_train.toarray()
+        X_train[matrix.index_base] = scaler.fit_transform(X_train[matrix.index_base])
+        if all:
+            while hidden_layers > 0:
+                if first:
+                    dim = X_train.shape[1]
+                    first = False
+                else:
+                    dim = param["hidden_units"]
+                model.add(Dense(dim, param["hidden_units"], init='glorot_uniform'))
+                if param["batch_norm"]:
+                    model.add(BatchNormalization((param["hidden_units"],)))
+                if param["hidden_activation"] == "prelu":
+                    model.add(PReLU((param["hidden_units"],)))
+                else:
+                    model.add(Activation(param['hidden_activation']))
+                model.add(Dropout(param["hidden_dropout"]))
+                hidden_layers -= 1
+            ## output layer
+            model.add(Dense(param["hidden_units"], 1, init='glorot_uniform'))
+            model.add(Activation('linear'))
+            ## loss
+            model.compile(loss='mean_squared_error', optimizer="adam")
+            ## to array
+            X_test = matrix.X_test.toarray()
+            X_test = scaler.transform(X_test)
+            ## train
+            model.fit(X_train[matrix.index_base], matrix.labels_train[matrix.index_base] + 1,
+                      nb_epoch=param['nb_epoch'], batch_size=param['batch_size'],
+                      testation_split=0, verbose=0)
+            ##prediction
+            pred = model.predict(X_test, verbose=0)
+            pred.shape = (X_test.shape[0],)
 
-        return pred
+        else:
+            while hidden_layers > 0:
+                if first:
+                    dim = X_train.shape[1]
+                    first = False
+                else:
+                    dim = param["hidden_units"]
+                model.add(Dense(dim, param["hidden_units"], init='glorot_uniform'))
+                if param["batch_norm"]:
+                    model.add(BatchNormalization((param["hidden_units"],)))
+                if param["hidden_activation"] == "prelu":
+                    model.add(PReLU((param["hidden_units"],)))
+                else:
+                    model.add(Activation(param['hidden_activation']))
+                model.add(Dropout(param["hidden_dropout"]))
+                hidden_layers -= 1
+            ## output layer
+            model.add(Dense(param["hidden_units"], 1, init='glorot_uniform'))
+            model.add(Activation('linear'))
+            ## loss
+            model.compile(loss='mean_squared_error', optimizer="adam")
+            ## to array
+            X_valid = matrix.X_valid.toarray()
+            X_valid = scaler.transform(X_valid)
+            ## train
+            model.fit(X_train[matrix.index_base], matrix.labels_train[matrix.index_base] + 1,
+                      nb_epoch=param['nb_epoch'], batch_size=param['batch_size'],
+                      validation_split=0, verbose=0)
+            ##prediction
+            pred = model.predict(X_valid, verbose=0)
+            pred.shape = (X_valid.shape[0],)
 
-    def reg_rank_predict(self, set_obj):
-        evalerror_regrank_valid = lambda preds, dtrain: utils.evalerror_regrank_cdf(preds, dtrain, set_obj.cdf_valid)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist,
-                        feval=evalerror_regrank_valid)
-        pred = bst.predict(set_obj.dvalid_base)
-        return pred
-
-    def soft_max_predict(self, set_obj):
-        evalerror_softmax_valid = lambda preds, dtrain: utils.evalerror_softmax_cdf(preds, dtrain, set_obj.cdf_valid)
-        ## softmax regression with xgboost
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist,
-                        feval=evalerror_softmax_valid)
-        # (6688, 4)
-        pred = bst.predict(set_obj.dvalid_base)
-        w = np.asarray(range(1, model_param_conf.num_of_class + 1))
-        # 加权相乘 ？累加
-        pred = pred * w[np.newaxis, :]
-        pred = np.sum(pred, axis=1)
-        return pred
-
-    def soft_softkappa_predict(self, set_obj):
-        ## softkappa with xgboost
-        obj = lambda preds, dtrain: utils.softkappaObj(preds, dtrain, hess_scale=self.param['hess_scale'])
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_softkappa_valid)
-        pred = utils.softmax(bst.predict(set_obj.dvalid_base))
-        w = np.asarray(range(1, model_param_conf.num_of_class + 1))
-        pred = pred * w[np.newaxis, :]
-        pred = np.sum(pred, axis=1)
-        return pred
-
-    def ebc_predict(self, set_obj):
-        # ebc with xgboost
-        obj = lambda preds, dtrain: utils.ebcObj(preds, dtrain)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_ebc_valid)
-        pred = utils.sigmoid(bst.predict(set_obj.dvalid_base))
-        pred = utils.applyEBCRule(pred, hard_threshold=utils.ebc_hard_threshold)
-        return pred
-
-    def cocr_predict(self, set_obj):
-        ## cocr with xgboost
-        obj = lambda preds, dtrain: utils.cocrObj(preds, dtrain)
-        bst = xgb.train(self.param, set_obj.dtrain_base, self.param['num_round'], set_obj.watchlist, obj=obj,
-                        feval=utils.evalerror_cocr_valid)
-        pred = bst.predict(set_obj.dvalid_base)
-        pred = utils.applyCOCRRule(pred)
         return pred
 
     def get_predicts(self):

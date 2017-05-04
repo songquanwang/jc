@@ -44,79 +44,40 @@ class ModelInter(object):
     def init_all_path(self):
         path = "%s/All" % (self.feat_folder)
         self.feat_train_path = "%s/train.feat" % path
-        self.feat_test_path = "%s/test.feat" % path
+        self.feat_valid_path = "%s/valid.feat" % path
 
         self.weight_train_path = "%s/train.feat.weight" % path
+
+        self.info_train_path = "%s/train.info" % path
+        self.info_valid_path = "%s/valid.info" % path
+
+        self.cdf_valid_path = "%s/valid.cdf" % path
+
+    def init_run_fold_path(self, run, fold):
+        path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
+        self.feat_train_path = "%s/train.feat" % path
+        self.feat_valid_path = "%s/test.feat" % path
+
+        self.weight_train_path = "%s/train.feat.weight" % path
+        self.weight_valid_path = "%s/valid.feat.weight" % path
 
         self.info_train_path = "%s/train.info" % path
         self.info_test_path = "%s/test.info" % path
 
         self.cdf_test_path = "%s/test.cdf" % path
 
-    def init_run_fold_path(self, run, fold, matrix):
-        path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
-        matrix.feat_train_path = "%s/train.feat" % path
-        matrix.feat_valid_path = "%s/valid.feat" % path
-
-        matrix.weight_train_path = "%s/train.feat.weight" % path
-        matrix.weight_valid_path = "%s/valid.feat.weight" % path
-
-        matrix.info_train_path = "%s/train.info" % path
-        matrix.info_valid_path = "%s/valid.info" % path
-
-        matrix.cdf_valid_path = "%s/valid.cdf" % path
-
-    def get_output_all_path(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std):
-        save_path = "%s/All" % model_param_conf.output_path
-        subm_path = "%s/Subm" % model_param_conf.output_path
-        raw_pred_test_path = "%s/test.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
-        rank_pred_test_path = "%s/test.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
-        # submission path (relevance as in [1,2,3,4])
-        subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (
-            subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
-
-        return raw_pred_test_path, rank_pred_test_path, subm_path
-
-    def get_output_run_fold_path(self, feat_name, trial_counter, run, fold):
-        save_path = "%s/Run%d/Fold%d" % (model_param_conf.output_path, run, fold)
-        raw_pred_valid_path = "%s/valid.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
-        rank_pred_valid_path = "%s/valid.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
-
-        return raw_pred_valid_path, rank_pred_valid_path
-
     def feature_all(self):
-        # init the path
         self.init_all_path()
-        # feat
-        X_train, labels_train = load_svmlight_file(self.feat_train_path)
-        X_test, labels_test = load_svmlight_file(self.feat_test_path)
-        # 延展array
-        if X_test.shape[1] < X_train.shape[1]:
-            X_test = hstack([X_test, np.zeros((X_test.shape[0], X_train.shape[1] - X_test.shape[1]))])
-        elif X_test.shape[1] > X_train.shape[1]:
-            X_train = hstack([X_train, np.zeros((X_train.shape[0], X_test.shape[1] - X_train.shape[1]))])
-        X_train = X_train.tocsr()
-        X_test = X_test.tocsr()
-        self.X_train, self.labels_train, self.X_test, self.labels_test = X_train, labels_train, X_test, labels_test
-        # weight
-        self.weight_train = np.loadtxt(self.weight_train_path, dtype=float)
-        # info
-        self.info_train = pd.read_csv(self.info_train_path)
-        self.info_test = pd.read_csv(self.info_test_path)
-        # cdf
-        self.cdf_test = np.loadtxt(self.cdf_test_path, dtype=float)
-        # number
+        (self.X_train, self.labels_train), (self.X_test, self.labels_test) = self.create_train_valid(path, all=True)
+        self.weight_train = self.create_weight(path, all=True)
+        self.info_train, self.info_test, self.id_test = self.create_info(path, all=True)
         self.numTrain = self.info_train.shape[0]
         self.numTest = self.info_test.shape[0]
-
-        # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain, model_param_conf.bootstrap_ratio)
-        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=self.weight_train[index_base])
-        self.dtest = xgb.DMatrix(X_test, label=labels_test)
-        # watchlist
-        self.watchlist = []
-        if model_param_conf.verbose_level >= 2:
-            self.watchlist = [(self.dtrain_base, 'train')]
+        self.cdf_test = self.create_cdf(path, all=True)
+        self.dtrain, self.dtest = self.create_base_all(self, self.X_train, self.labels_train, self.weight_train,
+                                                       self.X_valid, self.labels_valid, self.numTrain,
+                                                       self.weight_valid)
+        self.create_watch_list = self.create_watch_list(self.dtrain, None, all=True)
 
     def feature_run_fold(self, run, fold):
         """
@@ -125,13 +86,34 @@ class ModelInter(object):
         :param fold:
         :return:
         """
-        # init the path
         self.init_run_fold_path(self, run, fold)
-        matrix = self.run_fold_matrix[run][fold]
+        (self.run_fold_matrix[run][fold].X_train, self.run_fold_matrix[run][fold].labels_train), (
+            self.run_fold_matrix[run][fold].X_valid,
+            self.run_fold_matrix[run][fold].labels_valid) = self.create_train_valid(path)
+        self.run_fold_matrix[run][fold].weight_train, self.run_fold_matrix[run][fold].weight_valid = self.create_weight(
+            path)
+        self.run_fold_matrix[run][fold].info_train, self.run_fold_matrix[run][fold].info_valid = self.create_info(path)
+        numTrain = self.run_fold_matrix[run][fold].info_train.shape[0]
+        numValid = self.run_fold_matrix[run][fold].info_valid.shape[0]
+        self.run_fold_matrix[run][fold].numTrain = numTrain
+        self.run_fold_matrix[run][fold].numValid = numValid
+        self.run_fold_matrix[run][fold].cdf_valid = self.create_cdf(path)
+        self.run_fold_matrix[run][fold].dtrain_base, self.run_fold_matrix[run][
+            fold].dvalid_base = self.create_base_run_fold(run, fold, self.X_train, self.labels_train, self.weight_train,
+                                                          self.X_valid, self.labels_valid,
+                                                          numTrain, self.weight_valid)
+        self.run_fold_matrix[run][fold].create_watch_list = self.create_watch_list(
+            self.run_fold_matrix[run][fold].dtrain_base, self.run_fold_matrix[run][fold].dvalid_base)
+
+    def create_train_valid(self, path, all=False):
 
         # feat
-        X_train, labels_train = load_svmlight_file(matrix.feat_train_path)
-        X_valid, labels_valid = load_svmlight_file(matrix.feat_valid_path)
+        self.feat_train_path = "%s/train.feat" % path
+        self.feat_valid_path = "%s/valid.feat" % path
+        if all:
+            self.feat_valid_path = "%s/test.feat" % path
+        X_train, labels_train = load_svmlight_file(self.feat_train_path)
+        X_valid, labels_valid = load_svmlight_file(self.feat_valid_path)
         # 延展array
         if X_valid.shape[1] < X_train.shape[1]:
             X_valid = hstack([X_valid, np.zeros((X_valid.shape[0], X_train.shape[1] - X_valid.shape[1]))])
@@ -139,28 +121,77 @@ class ModelInter(object):
             X_train = hstack([X_train, np.zeros((X_train.shape[0], X_valid.shape[1] - X_train.shape[1]))])
         X_train = X_train.tocsr()
         X_valid = X_valid.tocsr()
-        # 赋给成员变量
-        matrix.X_train, matrix.labels_train, matrix.X_valid, matrix.labels_valid = X_train, labels_train, X_valid, labels_valid
-        # weight
-        matrix.weight_train = np.loadtxt(matrix.weight_train_path, dtype=float)
-        matrix.weight_valid = np.loadtxt(matrix.weight_valid_path, dtype=float)
+
+        return (X_train, labels_train), (X_valid, labels_valid)
+
+    def create_weight(self, path, all=False):
+        # weight load weight -train
+        weight_train_path = "%s/train.feat.weight" % path
+        weight_train = np.loadtxt(weight_train_path, dtype=float)
+        result = weight_train
+        # weight load weight -valid
+        if all == False:
+            weight_valid_path = "%s/valid.feat.weight" % path
+            weight_valid = np.loadtxt(weight_valid_path, dtype=float)
+            result = (weight_train, weight_valid)
+
+        return result
+
+    def create_info(self, path, all=False):
+
         # info
-        matrix.info_train = pd.read_csv(matrix.info_train_path)
-        matrix.info_valid = pd.read_csv(matrix.info_valid_path)
+        info_train_path = "%s/train.info" % path
+        info_valid_path = "%s/valid.info" % path
+        if all:
+            info_valid_path = "%s/test.info" % path
+            id_test = info_valid_path["id"]
+        # load info
+        info_train = pd.read_csv(info_train_path)
+        info_valid = pd.read_csv(info_valid_path)
+        result = (info_train, info_valid)
+        if all:
+            result = (info_train, info_valid, id_test)
+        return result
+
+    def create_cdf(self, path, all=False):
         # cdf
-        matrix.cdf_valid = np.loadtxt(matrix.cdf_valid_path, dtype=float)
-        # number
-        matrix.numTrain = matrix.info_train.shape[0]
-        matrix.numValid = matrix.info_valid.shape[0]
+        cdf_valid_path = "%s/valid.cdf" % path
+        if all:
+            cdf_valid_path = "%s/test.cdf" % path
+        ## load cdf
+        cdf_valid = np.loadtxt(cdf_valid_path, dtype=float)
+
+        return cdf_valid
+
+    def create_watch_list(self, dtrain_base, dvalid_base, all=False):
+        watchlist = []
+        if model_param_conf.verbose_level >= 2:
+            if all:
+                watchlist = [(dtrain_base, 'train')]
+            else:
+                watchlist = [(dtrain_base, 'train'), (dvalid_base, 'valid')]
+        return watchlist
+
+    def create_base_all(self, X_train, labels_train, weight_train, X_test, labels_test, numTrain, weight_valid):
 
         # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain, model_param_conf.bootstrap_ratio)
-        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=matrix.weight_train[index_base])
-        matrix.dvalid = xgb.DMatrix(X_valid, label=labels_valid)
-        # watchlist
-        matrix.watchlist = []
-        if model_param_conf.verbose_level >= 2:
-            matrix.watchlist = [(matrix.dtrain_base, 'train'), (matrix.dvalid_base, 'valid')]
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, numTrain,
+                                                     model_param_conf.bootstrap_ratio)
+        dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=weight_train[index_base])
+        dtest = xgb.DMatrix(X_test, label=labels_test)
+
+        return dtrain, dtest
+
+    def create_base_run_fold(self, run, fold, X_train, labels_train, weight_train, X_valid, labels_valid, numTrain,
+                             weight_valid):
+
+        # 分割训练数据
+        index_base, index_meta = utils.create_base_run_fold(model_param_conf.bootstrap_replacement, run, fold, numTrain,
+                                                            model_param_conf.bootstrap_ratio)
+        dtrain_base = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=weight_train[index_base])
+        dvalid_base = xgb.DMatrix(X_valid, label=labels_valid, weight=weight_valid)
+
+        return dtrain_base, dvalid_base
 
     def out_put_run_fold(self, run, fold, bagging, feat_name, trial_counter, kappa_valid, X_train, Y_valid, pred_raw,
                          pred_rank, kappa_cv):
@@ -179,7 +210,9 @@ class ModelInter(object):
         :param kappa_cv: out parameter;upate and return
         :return:
         """
-        raw_pred_valid_path, rank_pred_valid_path = self.get_output_run_fold_path(feat_name, trial_counter, run, fold)
+        save_path = "%s/Run%d/Fold%d" % (model_param_conf.output_path, run, fold)
+        raw_pred_valid_path = "%s/valid.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
+        rank_pred_valid_path = "%s/valid.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
         kappa_cv[run - 1, fold - 1] = kappa_valid
         ## save this prediction
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_raw})
@@ -196,10 +229,16 @@ class ModelInter(object):
             print("                    {:>3}       {:>3}      {:>3}    {:>8}  {} x {}".format(
                 run, fold, bagging + 1, np.round(kappa_valid, 6), X_train.shape[0], X_train.shape[1]))
 
-    def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,
+    def out_put_all(self, feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,
                     pred):
-
-        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
+        path = "%s/All" % (feat_folder)
+        save_path = "%s/All" % model_param_conf.output_path
+        subm_path = "%s/Subm" % model_param_conf.output_path
+        raw_pred_test_path = "%s/test.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
+        rank_pred_test_path = "%s/test.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
+        # submission path (relevance as in [1,2,3,4])
+        subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (
+            subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
         ## write
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
         output.to_csv(raw_pred_test_path, index=False)
@@ -218,11 +257,11 @@ class ModelInter(object):
         for run in range(1, config.n_runs + 1):
             for fold in range(1, config.n_folds + 1):
                 # 生成 run_fold_matrix
-                matrix = self.run_fold_matrix[run][fold]
-                self.feature_run_fold(self, run, fold, matrix)
-                preds_bagging = np.zeros((matrix.numValid, model_param_conf.bagging_size), dtype=float)
+                self.feature_run_fold(self, run, fold)
+                run_fold_matrix = self.run_fold_matrix[run][fold]
+                preds_bagging = np.zeros((run_fold_matrix.numValid, model_param_conf.bagging_size), dtype=float)
                 for n in range(model_param_conf.bagging_size):
-                    pred = self.train_predict(matrix)
+                    pred = self.train_predict(run_fold_matrix)
                     ## weighted averageing over different models
                     pred_valid = pred
                     ## this bagging iteration
@@ -233,8 +272,8 @@ class ModelInter(object):
                     pred_score, cutoff = utils.getScore(pred_rank, self.cdf_valid, valid=True)
                     kappa_valid = utils.quadratic_weighted_kappa(pred_score, self.Y_valid)
                 # 输出文件
-                self.out_put_run_fold(run, fold, n, feat_name, trial_counter, kappa_valid, matrix.X_train,
-                                      matrix.Y_valid, pred_raw, pred_rank, kappa_cv)
+                self.out_put_run_fold(run, fold, n, feat_name, trial_counter, kappa_valid, run_fold_matrix.X_train,
+                                      run_fold_matrix.Y_valid, pred_raw, pred_rank, kappa_cv)
 
         kappa_cv_mean = np.mean(kappa_cv)
         kappa_cv_std = np.std(kappa_cv)
