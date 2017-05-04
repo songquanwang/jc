@@ -1,44 +1,17 @@
 # coding=utf-8
 __author__ = 'songquanwang'
 
+import os
+
 import numpy as np
-import pandas as pd
 
 from competition.inter.model_inter import ModelInter
-import csv
-import os
-import cPickle
-import numpy as np
-import pandas as pd
-import xgboost as xgb
-from scipy.sparse import hstack
+
 ## sklearn
-from sklearn.base import BaseEstimator
-from sklearn.datasets import load_svmlight_file, dump_svmlight_file
+from sklearn.datasets import dump_svmlight_file
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.linear_model import Ridge, Lasso, LassoLars, ElasticNet
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-# 梯度自举树，也是gdbt的实现
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
-from sklearn.svm import SVR
-from sklearn.pipeline import Pipeline
-## hyperopt
-from hyperopt import hp
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
-## keras
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation
-from keras.layers.normalization import BatchNormalization
-from keras.layers.advanced_activations import PReLU
-from keras.utils import np_utils, generic_utils
-## sklearn
-# 梯度自举树，也是gdbt的实现
-## hyperopt
-## keras
+
 import competition.conf.model_params_conf as model_param_conf
-import competition.utils.utils as utils
 
 from competition.conf.param_config import config
 
@@ -49,8 +22,6 @@ global log_handler
 class GbdtModelImp(ModelInter):
     def __init__(self, param, feat_folder, feat_name):
         super(ModelInter, self).__init__(param, feat_folder, feat_name)
-        # 初始化run fold的各种集合的矩阵
-        self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
     def train_predict(self, matrix, all=False):
         """

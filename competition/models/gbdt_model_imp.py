@@ -2,14 +2,11 @@
 __author__ = 'songquanwang'
 
 import numpy as np
-import pandas as pd
+import xgboost as xgb
 
 from competition.inter.model_inter import ModelInter
-import xgboost as xgb
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
-
-from competition.conf.param_config import config
 
 global trial_counter
 global log_handler

@@ -2,28 +2,19 @@
 __author__ = 'songquanwang'
 
 import numpy as np
-import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesRegressor
 
 from competition.inter.model_inter import ModelInter
 
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.linear_model import Ridge, Lasso, LassoLars, ElasticNet
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 # 梯度自举树，也是gdbt的实现
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import SVR
-from sklearn.pipeline import Pipeline
-## sklearn
-# 梯度自举树，也是gdbt的实现
-## hyperopt
-## keras
-import competition.conf.model_params_conf as model_param_conf
-import competition.utils.utils as utils
 
-from competition.conf.param_config import config
+import competition.conf.model_params_conf as model_param_conf
 
 global trial_counter
 global log_handler
@@ -32,8 +23,6 @@ global log_handler
 class GbdtModelImp(ModelInter):
     def __init__(self, param, feat_folder, feat_name):
         super(ModelInter, self).__init__(param, feat_folder, feat_name)
-        # 初始化run fold的各种集合的矩阵
-        self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
     def train_predict(self, set_obj, all=False):
         """

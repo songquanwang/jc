@@ -1,19 +1,12 @@
 # coding=utf-8
 __author__ = 'songquanwang'
 
+import os
+
 import numpy as np
-import pandas as pd
 
 from competition.inter.model_inter import ModelInter
-import xgboost as xgb
-## sklearn
-# 梯度自举树，也是gdbt的实现
-## hyperopt
-## keras
-import os
 import competition.conf.model_params_conf as model_param_conf
-import competition.utils.utils as utils
-
 from competition.conf.param_config import config
 
 global trial_counter
@@ -23,8 +16,6 @@ global log_handler
 class GbdtModelImp(ModelInter):
     def __init__(self, param, feat_folder, feat_name):
         super(ModelInter, self).__init__(param, feat_folder, feat_name)
-        # 初始化run fold的各种集合的矩阵
-        self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
     def train_predict(self, matrix, all=False):
         """

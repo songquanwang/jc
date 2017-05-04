@@ -2,25 +2,14 @@
 __author__ = 'songquanwang'
 
 import numpy as np
-import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 from competition.inter.model_inter import ModelInter
-import xgboost as xgb
-## sklearn
-# 梯度自举树，也是gdbt的实现
-## hyperopt
-## keras
-import competition.conf.model_params_conf as model_param_conf
-import competition.utils.utils as utils
-from hyperopt import hp
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
-from sklearn.preprocessing import StandardScaler
 ## keras
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
-from keras.utils import np_utils, generic_utils
 ## cutomized module
 from competition.conf.param_config import config
 
@@ -31,16 +20,14 @@ global log_handler
 class GbdtModelImp(ModelInter):
     def __init__(self, param, feat_folder, feat_name):
         super(ModelInter, self).__init__(param, feat_folder, feat_name)
-        # 初始化run fold的各种集合的矩阵
-        self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
 
-    def train_predict(self,matrix, all=False):
+    def train_predict(self, matrix, all=False):
         """
         数据训练
         :param train_end_date:
         :return:
         """
-        param =matrix.param
+        param = matrix.param
         ## regression with keras' deep neural networks
         model = Sequential()
         ## input layer
