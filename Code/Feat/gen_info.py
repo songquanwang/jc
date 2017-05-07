@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -25,10 +25,13 @@ __author__
 import os
 import sys
 import cPickle
+
 import numpy as np
 import pandas as pd
+
 sys.path.append("../")
 from param_config import config
+
 
 def gen_info(feat_path_name):
     ###############
@@ -50,7 +53,7 @@ def gen_info(feat_path_name):
     ## load pre-defined stratified k-fold index     stratifiedKFold.query.pkl文件何来？
     with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
         skf = cPickle.load(f)
-        
+
     #######################
     ## Generate Features ##
     #######################
@@ -60,8 +63,8 @@ def gen_info(feat_path_name):
         ## use 33% for training and 67 % for validation
         ## so we switch trainInd and validInd
         for fold, (validInd, trainInd) in enumerate(skf[run]):
-            print("Run: %d, Fold: %d" % (run+1, fold+1))
-            path = "%s/%s/Run%d/Fold%d" % (config.feat_folder, feat_path_name, run+1, fold+1)
+            print("Run: %d, Fold: %d" % (run + 1, fold + 1))
+            path = "%s/%s/Run%d/Fold%d" % (config.feat_folder, feat_path_name, run + 1, fold + 1)
             if not os.path.exists(path):
                 os.makedirs(path)
             ##########################
@@ -69,11 +72,11 @@ def gen_info(feat_path_name):
             ##########################
             raise_to = 0.5
             var = dfTrain["relevance_variance"].values
-            #最大标准差
-            max_var = np.max(var[trainInd]**raise_to)
+            # 最大标准差
+            max_var = np.max(var[trainInd] ** raise_to)
             #     [1+（最大标准差-标准差数组）/最大标准差]/2
-            weight = (1 + np.power(((max_var - var**raise_to) / max_var),1)) / 2.
-            #weight = (max_var - var**raise_to) / max_var
+            weight = (1 + np.power(((max_var - var ** raise_to) / max_var), 1)) / 2.
+            # weight = (max_var - var**raise_to) / max_var
             np.savetxt("%s/train.feat.weight" % path, weight[trainInd], fmt="%.6f")
             np.savetxt("%s/valid.feat.weight" % path, weight[validInd], fmt="%.6f")
 
@@ -82,14 +85,14 @@ def gen_info(feat_path_name):
             #############################
             np.savetxt("%s/train.feat.group" % path, [len(trainInd)], fmt="%d")
             np.savetxt("%s/valid.feat.group" % path, [len(validInd)], fmt="%d")
-            
+
             ######################
             ## get and dump cdf ##
             ######################
             hist = np.bincount(Y[trainInd])
             overall_cdf_valid = np.cumsum(hist) / float(sum(hist))
             np.savetxt("%s/valid.cdf" % path, overall_cdf_valid)
-                
+
             #############################
             ## dump all the other info ##
             #############################
@@ -102,10 +105,10 @@ def gen_info(feat_path_name):
     if not os.path.exists(path):
         os.makedirs(path)
     ## weight
-    max_var = np.max(var**raise_to)
-    weight = (1 + np.power(((max_var - var**raise_to) / max_var),1)) / 2.
+    max_var = np.max(var ** raise_to)
+    weight = (1 + np.power(((max_var - var ** raise_to) / max_var), 1)) / 2.
     np.savetxt("%s/train.feat.weight" % path, weight, fmt="%.6f")
-    
+
     ## group
     np.savetxt("%s/%s/All/train.feat.group" % (config.feat_folder, feat_path_name), [dfTrain.shape[0]], fmt="%d")
     np.savetxt("%s/%s/All/test.feat.group" % (config.feat_folder, feat_path_name), [dfTest.shape[0]], fmt="%d")
@@ -117,5 +120,5 @@ def gen_info(feat_path_name):
     ## info        
     dfTrain_original.to_csv("%s/%s/All/train.info" % (config.feat_folder, feat_path_name), index=False, header=True)
     dfTest_original.to_csv("%s/%s/All/test.info" % (config.feat_folder, feat_path_name), index=False, header=True)
-    
+
     print("All Done.")

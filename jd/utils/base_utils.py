@@ -6,8 +6,8 @@ import datetime as dt
 import math
 from collections import OrderedDict
 import numbers
-import six
 from itertools import chain
+
 from dateutil.relativedelta import relativedelta
 
 

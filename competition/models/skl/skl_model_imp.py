@@ -10,6 +10,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 
 from competition.inter.model_inter import ModelInter
 
+
 # 梯度自举树，也是gdbt的实现
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import SVR
@@ -56,7 +57,8 @@ class GbdtModelImp(ModelInter):
                                    max_features=param['max_features'],
                                    n_jobs=param['n_jobs'],
                                    random_state=param['random_state'])
-        rf.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1, sample_weight=set_obj.weight_train[set_obj.index_base])
+        rf.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
+               sample_weight=set_obj.weight_train[set_obj.index_base])
         if all == False:
             pred = rf.predict(set_obj.X_valid)
         else:
@@ -71,7 +73,8 @@ class GbdtModelImp(ModelInter):
                                   max_features=param['max_features'],
                                   n_jobs=param['n_jobs'],
                                   random_state=param['random_state'])
-        etr.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1, sample_weight=set_obj.weight_train[set_obj.index_base])
+        etr.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
+                sample_weight=set_obj.weight_train[set_obj.index_base])
         if all == False:
             pred = etr.predict(set_obj.X_valid)
         else:
@@ -122,7 +125,8 @@ class GbdtModelImp(ModelInter):
         X_train[set_obj.index_base] = scaler.fit_transform(X_train[set_obj.index_base])
         svr = SVR(C=param['C'], gamma=param['gamma'], epsilon=param['epsilon'],
                   degree=param['degree'], kernel=param['kernel'])
-        svr.fit(X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1, sample_weight=set_obj.weight_train[set_obj.index_base])
+        svr.fit(X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
+                sample_weight=set_obj.weight_train[set_obj.index_base])
         if all == False:
             X_valid = set_obj.X_valid.toarray()
             X_valid = scaler.transform(X_valid)

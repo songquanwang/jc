@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -22,12 +22,9 @@ __author__
 
 """
 
-import sys
-
 import numpy as np
 
 from competition.utils.ml_metrics import quadratic_weighted_kappa
-
 from competition.conf.param_config import config
 
 
@@ -188,7 +185,8 @@ def softkappaObj(preds, dtrain):
         for k in range(N):
             for l in range(N):
                 indicator = float(n == k)
-                d2E += pow(k - l, 2.0) * hist_label[l] * preds[:, n] * (1 - 2. * preds[:, n]) * (indicator - preds[:, k])
+                d2E += pow(k - l, 2.0) * hist_label[l] * preds[:, n] * (1 - 2. * preds[:, n]) * (
+                indicator - preds[:, k])
         ## the hess
         hess[:, n] = -M * ((d2O * E - O * d2E) * (E ** 2) - (dO * E - O * dE) * 2. * E * dE) / (E ** 4)
 
@@ -426,7 +424,6 @@ def evalerror_cocr_cdf(preds, dtrain, cdf):
     ## we return -kappa for using early stopping
     kappa *= -1.
     return 'kappa', float(kappa)
-
 
 
 def bootstrap_all(bootstrap_replacement, run, fold, numTrain, bootstrap_ratio):

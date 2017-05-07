@@ -1,13 +1,15 @@
 __author__ = 'songquanwang'
 
 import numpy as np
-#coding:utf-8
+
+
+# coding:utf-8
 def confusion_matrix(rater_a, rater_b, min_rating=None, max_rating=None):
     """
     Returns the confusion matrix between rater's ratings
     评级别 ，查看偏差的矩阵 i 0越大越好
     """
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:
@@ -32,11 +34,12 @@ def histogram(ratings, min_rating=None, max_rating=None):
         hist_ratings[r - min_rating] += 1
     return hist_ratings
 
-#代码中采用的这种方式
+
+# 代码中采用的这种方式
 def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
     rater_a = np.array(rater_a, dtype=int)
     rater_b = np.array(rater_b, dtype=int)
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(min(rater_a), min(rater_b))
     if max_rating is None:
@@ -60,7 +63,7 @@ def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None)
 
 
 def linear_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:
@@ -84,7 +87,7 @@ def linear_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
 
 
 def kappa(rater_a, rater_b, min_rating=None, max_rating=None):
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:
@@ -108,6 +111,7 @@ def kappa(rater_a, rater_b, min_rating=None, max_rating=None):
             numerator += d * conf_mat[i][j] / num_scored_items
             denominator += d * expected_count / num_scored_items
     return 1.0 - numerator / denominator
+
 
 def mean_quadratic_weighted_kappa(kappas, weights=None):
     kappas = np.array(kappas, dtype=float)

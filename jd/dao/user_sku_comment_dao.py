@@ -5,7 +5,6 @@ import jd.utils.base_utils as utils
 
 
 class UserSkuCommentDao():
-
     """
     评价数据
     对应文件：JData_Comment.cvs

@@ -2,12 +2,14 @@
 __author__ = 'songquanwang'
 
 import abc
-import numpy as np
 import csv
+
+import numpy as np
 import pandas as pd
+from sklearn.datasets import load_svmlight_file
+
 import xgboost as xgb
-from sklearn.datasets import load_svmlight_file, dump_svmlight_file
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+from hyperopt import fmin, tpe, STATUS_OK, Trials
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 from scipy.sparse import hstack
@@ -110,8 +112,10 @@ class ModelInter(object):
         self.numTest = self.info_test.shape[0]
 
         # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain, model_param_conf.bootstrap_ratio)
-        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=self.weight_train[index_base])
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain,
+                                                     model_param_conf.bootstrap_ratio)
+        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],
+                                  weight=self.weight_train[index_base])
         self.dtest = xgb.DMatrix(X_test, label=labels_test)
         # watchlist
         self.watchlist = []
@@ -154,8 +158,10 @@ class ModelInter(object):
         matrix.numValid = matrix.info_valid.shape[0]
 
         # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain, model_param_conf.bootstrap_ratio)
-        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=matrix.weight_train[index_base])
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain,
+                                                     model_param_conf.bootstrap_ratio)
+        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],
+                                    weight=matrix.weight_train[index_base])
         matrix.dvalid = xgb.DMatrix(X_valid, label=labels_valid)
         # watchlist
         matrix.watchlist = []
@@ -199,7 +205,8 @@ class ModelInter(object):
     def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,
                     pred):
 
-        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
+        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter,
+                                                                                      kappa_cv_mean, kappa_cv_std)
         ## write
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
         output.to_csv(raw_pred_test_path, index=False)

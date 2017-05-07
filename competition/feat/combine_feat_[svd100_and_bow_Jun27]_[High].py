@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
     
@@ -18,14 +18,13 @@ __author__
 """
 
 import sys
+
 sys.path.append("../")
 from code_new.param_config import config
-from gen_info import gen_info
+from competition.preprocess.gen_info import gen_info
 from combine_feat import combine_feat, SimpleTransform
 
-            
 if __name__ == "__main__":
-
     feat_names = [
 
         # ## id feat
@@ -299,7 +298,6 @@ if __name__ == "__main__":
 
         ('description_missing', SimpleTransform()),
 
-
         ## jaccard coef
         ('jaccard_coef_of_unigram_between_query_title', SimpleTransform()),
         ('jaccard_coef_of_unigram_between_query_description', SimpleTransform()),
@@ -358,7 +356,7 @@ if __name__ == "__main__":
         # # ('description_bow_common_vocabulary_individual_svd100_cosine_sim_stats_feat_by_relevance', SimpleTransform()),
         # # ('description_bow_common_vocabulary_individual_svd100_cosine_sim_stats_feat_by_query_relevance', SimpleTransform()),
         # # ('description_bow_common_vocabulary_individual_svd100_cosine_sim_stats_feat_by_query_cat_relevance', SimpleTransform()),
-        
+
         ############
         ## TF-IDF ##
         ############

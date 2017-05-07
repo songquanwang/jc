@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -15,11 +15,8 @@ __author__
 
 """
 
-import re
 import csv
-import cPickle
-import numpy as np
-import pandas as pd
+
 from nltk.corpus import wordnet
 
 
@@ -29,10 +26,11 @@ from nltk.corpus import wordnet
 class WordReplacer(object):
     def __init__(self, word_map):
         self.word_map = word_map
+
     def replace(self, word):
         return [self.word_map.get(w, w) for w in word]
-    
-    
+
+
 class CsvWordReplacer(WordReplacer):
     def __init__(self, fname):
         word_map = {}
@@ -58,14 +56,14 @@ class AntonymReplacer(object):
             return antonyms.pop()
         else:
             return None
-            
+
     def replace_negations(self, sent):
         i, l = 0, len(sent)
         words = []
         while i < l:
             word = sent[i]
-            if word == 'not' and i+1 < l:
-                ant = self.replace(sent[i+1])
+            if word == 'not' and i + 1 < l:
+                ant = self.replace(sent[i + 1])
                 if ant:
                     words.append(ant)
                     i += 2

@@ -1,11 +1,10 @@
 # coding=utf-8
 __author__ = 'songquanwang'
 
-from pyspark import StorageLevel, SparkContext, SparkConf
-
 import csv
 from itertools import islice
 
+from pyspark import SparkContext, SparkConf
 from  jd.dao.sku_attr_cate import SkuAttrCateDao
 from jd.dao.user import UserDao
 from jd.dao.user_sku_action_dao import UserSkuActionDao
@@ -50,15 +49,20 @@ def merge_data():
     def sort_by_date(values, key_index):
         return sorted(values, key=lambda x: x[key_index])
 
-    comment_map = user_sku_comment_dao.get_data().map(lambda line: (line[1], line[0] + line[2:])).groupByKey().mapValues(lambda values: sort_by_date(values, 0)).collectAsMap()
+    comment_map = user_sku_comment_dao.get_data().map(
+        lambda line: (line[1], line[0] + line[2:])).groupByKey().mapValues(
+        lambda values: sort_by_date(values, 0)).collectAsMap()
 
     user_broad = sc.broadcast(user_map)
     sku_broad = sc.broadcast(sku_map)
     comment_broad = sc.broadcast(comment_map)
 
-    rdd_action_0301_0315 = user_sku_action_dao.get_data_1().map(lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
-    rdd_action_0316_0331 = user_sku_action_dao.get_data_2().map(lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
-    rdd_action_0401_0415 = user_sku_action_dao.get_data_3().map(lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
+    rdd_action_0301_0315 = user_sku_action_dao.get_data_1().map(
+        lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
+    rdd_action_0316_0331 = user_sku_action_dao.get_data_2().map(
+        lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
+    rdd_action_0401_0415 = user_sku_action_dao.get_data_3().map(
+        lambda line: ((line[0], line[1]), line[2:5])).groupByKey().mapValues(lambda values: sort_by_date(values, 0))
 
     def merge_data(value):
         user_id = value[0]

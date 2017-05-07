@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -18,15 +18,16 @@ __author__
 
 import sys
 import cPickle
+
 from sklearn.preprocessing import LabelBinarizer
+
 sys.path.append("../")
 from param_config import config
-
 
 if __name__ == "__main__":
 
     ## config
-    id_names = [ "qid" ]
+    id_names = ["qid"]
 
     ###############
     ## Load Data ##
@@ -38,7 +39,7 @@ if __name__ == "__main__":
         dfTest = cPickle.load(f)
     ## load pre-defined stratified k-fold index
     with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
-            skf = cPickle.load(f)
+        skf = cPickle.load(f)
 
     #######################
     ## Generate Features ##
@@ -51,8 +52,8 @@ if __name__ == "__main__":
         ## use 33% for training and 67 % for validation
         ## so we switch trainInd and validInd
         for fold, (validInd, trainInd) in enumerate(skf[run]):
-            print("Run: %d, Fold: %d" % (run+1, fold+1))
-            path = "%s/Run%d/Fold%d" % (config.feat_folder, run+1, fold+1)
+            print("Run: %d, Fold: %d" % (run + 1, fold + 1))
+            path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
 
             #################
             ## get id feat ##
@@ -60,13 +61,13 @@ if __name__ == "__main__":
             for id_name in id_names:
                 lb = LabelBinarizer(sparse_output=True)
                 X_train = lb.fit_transform(dfTrain.iloc[trainInd][id_name])
-                #如果validInt 和trainInt没有相同 则transform() X_train没有的classes_会是零向量
+                # 如果validInt 和trainInt没有相同 则transform() X_train没有的classes_会是零向量
                 X_valid = lb.transform(dfTrain.iloc[validInd][id_name])
                 with open("%s/train.%s.feat.pkl" % (path, id_name), "wb") as f:
                     cPickle.dump(X_train, f, -1)
                 with open("%s/valid.%s.feat.pkl" % (path, id_name), "wb") as f:
                     cPickle.dump(X_valid, f, -1)
-                    
+
     print("Done.")
 
     print("For training and testing...")
@@ -80,5 +81,5 @@ if __name__ == "__main__":
         with open("%s/test.%s.feat.pkl" % (path, id_name), "wb") as f:
             cPickle.dump(X_test, f, -1)
     print("Done.")
-    
+
     print("All Done.")
