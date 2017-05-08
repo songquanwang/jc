@@ -1,7 +1,6 @@
 # coding=utf-8
 __author__ = 'songquanwang'
 
-import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 from competition.inter.model_inter import ModelInter

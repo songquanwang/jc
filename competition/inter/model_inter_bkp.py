@@ -2,12 +2,14 @@
 __author__ = 'songquanwang'
 
 import abc
-import numpy as np
 import csv
+
+import numpy as np
 import pandas as pd
+from sklearn.datasets import load_svmlight_file
+
 import xgboost as xgb
-from sklearn.datasets import load_svmlight_file, dump_svmlight_file
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+from hyperopt import fmin, tpe, STATUS_OK, Trials
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 from scipy.sparse import hstack

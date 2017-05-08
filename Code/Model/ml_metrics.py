@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -24,7 +24,7 @@ def confusion_matrix(rater_a, rater_b, min_rating=None, max_rating=None):
     矩阵坐标代表 差别，矩阵值代表 该差别的权重（次数）
     [0,0]/[1,1]/[2,2]...[N,N]占比越大越好
     """
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:
@@ -54,7 +54,8 @@ def histogram(ratings, min_rating=None, max_rating=None):
         hist_ratings[r - min_rating] += 1
     return hist_ratings
 
-#代码中采用的这种方式
+
+# 代码中采用的这种方式
 def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
     """
     Calculates the quadratic weighted kappa
@@ -83,7 +84,7 @@ def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None)
     """
     rater_a = np.array(rater_a, dtype=int)
     rater_b = np.array(rater_b, dtype=int)
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(min(rater_a), min(rater_b))
     if max_rating is None:
@@ -106,11 +107,11 @@ def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None)
             # 理论频数
             expected_count = (hist_rater_a[i] * hist_rater_b[j]
                               / num_scored_items)
-            #权重 [（i-j)/(num-1)]^2
+            # 权重 [（i-j)/(num-1)]^2
             d = pow(i - j, 2.0) / pow(num_ratings - 1, 2.0)
-            #权重 * 实际频数
+            # 权重 * 实际频数
             numerator += d * conf_mat[i][j] / num_scored_items
-            #权重 * 期望频数
+            # 权重 * 期望频数
             denominator += d * expected_count / num_scored_items
 
     return 1.0 - numerator / denominator
@@ -141,7 +142,7 @@ def linear_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None):
     rater_b = [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2]
     0.5714285714285714
     """
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:
@@ -189,7 +190,7 @@ def kappa(rater_a, rater_b, min_rating=None, max_rating=None):
     is the minimum possible rating, and max_rating is the maximum possible
     rating
     """
-    assert(len(rater_a) == len(rater_b))
+    assert (len(rater_a) == len(rater_b))
     if min_rating is None:
         min_rating = min(rater_a + rater_b)
     if max_rating is None:

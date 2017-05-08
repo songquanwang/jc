@@ -58,7 +58,8 @@ class GbdtModelImp(ModelInter):
             with open(rfg_setting_train + ".inp", "wb") as f:
                 f.write(pars)
             ## train fm
-            cmd = "perl %s %s train %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+            cmd = "perl %s %s train %s >> rgf.log" % (
+            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
             # print cmd
             os.system(cmd)
             model_fn = model_fn_prefix + "-01"
@@ -71,7 +72,8 @@ class GbdtModelImp(ModelInter):
             rfg_setting_test = "./rfg_setting_test"
             with open(rfg_setting_test + ".inp", "wb") as f:
                 f.write(pars)
-            cmd = "perl %s %s predict %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_test)
+            cmd = "perl %s %s predict %s >> rgf.log" % (
+            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_test)
             # print cmd
             os.system(cmd)
             pred = np.loadtxt(test_pred_fn, dtype=float)
@@ -107,7 +109,8 @@ class GbdtModelImp(ModelInter):
             with open(rfg_setting_train + ".inp", "wb") as f:
                 f.write(pars)
             ## train fm
-            cmd = "perl %s %s train %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+            cmd = "perl %s %s train %s >> rgf.log" % (
+            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
             # print cmd
             os.system(cmd)
             model_fn = model_fn_prefix + "-01"
@@ -120,7 +123,8 @@ class GbdtModelImp(ModelInter):
             rfg_setting_valid = "./rfg_setting_valid"
             with open(rfg_setting_valid + ".inp", "wb") as f:
                 f.write(pars)
-            cmd = "perl %s %s predict %s >> rgf.log" % (model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_valid)
+            cmd = "perl %s %s predict %s >> rgf.log" % (
+            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_valid)
             # print cmd
             os.system(cmd)
             pred = np.loadtxt(valid_pred_fn, dtype=float)

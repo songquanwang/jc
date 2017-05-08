@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -18,10 +18,13 @@ import sys
 import csv
 import os
 import cPickle
+
 import numpy as np
 import pandas as pd
+
 import xgboost as xgb
 from scipy.sparse import hstack
+
 ## sklearn
 from sklearn.base import BaseEstimator
 from sklearn.datasets import load_svmlight_file, dump_svmlight_file
@@ -30,7 +33,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.linear_model import Ridge, Lasso, LassoLars, ElasticNet
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-#梯度自举树，也是gdbt的实现
+# 梯度自举树，也是gdbt的实现
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.svm import SVR
 from sklearn.pipeline import Pipeline
@@ -45,11 +48,11 @@ from keras.layers.advanced_activations import PReLU
 from keras.utils import np_utils, generic_utils
 ## cutomized module
 from model_library_config import feat_folders, feat_names, param_spaces, int_feat
+
 sys.path.append("../")
 from param_config import config
 from ml_metrics import quadratic_weighted_kappa
 from utils import *
-
 
 global trial_counter
 global log_handler
@@ -68,7 +71,7 @@ output_path = "../../Output"
 ## you can use bagging to stabilize the predictions
 bootstrap_ratio = 1
 bootstrap_replacement = False
-bagging_size= 1
+bagging_size = 1
 
 ebc_hard_threshold = False
 verbose_level = 1
@@ -93,8 +96,8 @@ def hyperopt_wrapper(param, feat_folder, feat_name):
     print("        Model")
     print("              %s" % feat_name)
     print("        Param")
-    for k,v in sorted(param.items()):
-        print("              %s: %s" % (k,v))
+    for k, v in sorted(param.items()):
+        print("              %s: %s" % (k, v))
     print("        Result")
     print("                    Run      Fold      Bag      Kappa      Shape")
 
@@ -104,24 +107,23 @@ def hyperopt_wrapper(param, feat_folder, feat_name):
     ## log
     var_to_log = [
         "%d" % trial_counter,
-        "%.6f" % kappa_cv_mean, 
+        "%.6f" % kappa_cv_mean,
         "%.6f" % kappa_cv_std
     ]
-    #日志中输出参数值 次数 均值 标准差 值1 值2 ...值N
-    for k,v in sorted(param.items()):
+    # 日志中输出参数值 次数 均值 标准差 值1 值2 ...值N
+    for k, v in sorted(param.items()):
         var_to_log.append("%s" % v)
     writer.writerow(var_to_log)
     log_handler.flush()
 
     return {'loss': -kappa_cv_mean, 'attachments': {'std': kappa_cv_std}, 'status': STATUS_OK}
-    
+
 
 #### train CV and final model with a specified parameter setting
 def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
-
     kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
-    for run in range(1,config.n_runs+1):
-        for fold in range(1,config.n_folds+1):
+    for run in range(1, config.n_runs + 1):
+        for fold in range(1, config.n_folds + 1):
             rng = np.random.RandomState(2015 + 1000 * run + 10 * fold)
 
             #### all the path
@@ -147,11 +149,11 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             ## load feat
             X_train, labels_train = load_svmlight_file(feat_train_path)
             X_valid, labels_valid = load_svmlight_file(feat_valid_path)
-            #延展array
+            # 延展array
             if X_valid.shape[1] < X_train.shape[1]:
-                X_valid = hstack([X_valid, np.zeros((X_valid.shape[0], X_train.shape[1]-X_valid.shape[1]))])
+                X_valid = hstack([X_valid, np.zeros((X_valid.shape[0], X_train.shape[1] - X_valid.shape[1]))])
             elif X_valid.shape[1] > X_train.shape[1]:
-                X_train = hstack([X_train, np.zeros((X_train.shape[0], X_valid.shape[1]-X_train.shape[1]))])
+                X_train = hstack([X_train, np.zeros((X_train.shape[0], X_valid.shape[1] - X_train.shape[1]))])
             X_train = X_train.tocsr()
             X_valid = X_valid.tocsr()
             ## load weight
@@ -168,11 +170,11 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             cdf_valid = np.loadtxt(cdf_valid_path, dtype=float)
 
             ## make evalerror func
-            evalerror_regrank_valid = lambda preds,dtrain: evalerror_regrank_cdf(preds, dtrain, cdf_valid)
-            evalerror_softmax_valid = lambda preds,dtrain: evalerror_softmax_cdf(preds, dtrain, cdf_valid)
-            evalerror_softkappa_valid = lambda preds,dtrain: evalerror_softkappa_cdf(preds, dtrain, cdf_valid)
-            evalerror_ebc_valid = lambda preds,dtrain: evalerror_ebc_cdf(preds, dtrain, cdf_valid, ebc_hard_threshold)
-            evalerror_cocr_valid = lambda preds,dtrain: evalerror_cocr_cdf(preds, dtrain, cdf_valid)
+            evalerror_regrank_valid = lambda preds, dtrain: evalerror_regrank_cdf(preds, dtrain, cdf_valid)
+            evalerror_softmax_valid = lambda preds, dtrain: evalerror_softmax_cdf(preds, dtrain, cdf_valid)
+            evalerror_softkappa_valid = lambda preds, dtrain: evalerror_softkappa_cdf(preds, dtrain, cdf_valid)
+            evalerror_ebc_valid = lambda preds, dtrain: evalerror_ebc_cdf(preds, dtrain, cdf_valid, ebc_hard_threshold)
+            evalerror_cocr_valid = lambda preds, dtrain: evalerror_cocr_cdf(preds, dtrain, cdf_valid)
 
             ##############
             ## Training ##
@@ -182,7 +184,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             # 根据 bootstrap_replacement 初始化 index_base index_meta
             for n in range(bagging_size):
                 if bootstrap_replacement:
-                    sampleSize = int(numTrain*bootstrap_ratio)
+                    sampleSize = int(numTrain * bootstrap_ratio)
                     # numTrain -- sampleSize 个随机数字数组array
                     index_base = rng.randint(numTrain, size=sampleSize)
                     index_meta = [i for i in range(numTrain) if i not in index_base]
@@ -190,15 +192,16 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     randnum = rng.uniform(size=numTrain)
                     index_base = [i for i in range(numTrain) if randnum[i] < bootstrap_ratio]
                     index_meta = [i for i in range(numTrain) if randnum[i] >= bootstrap_ratio]
-             # 如果 xgboost 则初始化 dvalid_base dtrain_base
+                    # 如果 xgboost 则初始化 dvalid_base dtrain_base
                 if param.has_key("booster"):
                     dvalid_base = xgb.DMatrix(X_valid, label=labels_valid, weight=weight_valid)
-                    dtrain_base = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=weight_train[index_base])
+                    dtrain_base = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],
+                                              weight=weight_train[index_base])
 
                     watchlist = []
                     if verbose_level >= 2:
-                        watchlist  = [(dtrain_base, 'train'), (dvalid_base, 'valid')]
-                    
+                        watchlist = [(dtrain_base, 'train'), (dvalid_base, 'valid')]
+
                 ## various models
                 if param["task"] in ["regression", "ranking"]:
                     ## regression & pairwise ranking with xgboost
@@ -208,33 +211,36 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                 elif param["task"] in ["softmax"]:
                     ## softmax regression with xgboost
                     bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, feval=evalerror_softmax_valid)
-                    #(6688, 4)
+                    # (6688, 4)
                     pred = bst.predict(dvalid_base)
-                    w = np.asarray(range(1,numOfClass+1))
-                    #加权相乘 ？累加
-                    pred = pred * w[np.newaxis,:]
+                    w = np.asarray(range(1, numOfClass + 1))
+                    # 加权相乘 ？累加
+                    pred = pred * w[np.newaxis, :]
                     pred = np.sum(pred, axis=1)
 
                 elif param["task"] in ["softkappa"]:
                     ## softkappa with xgboost
                     obj = lambda preds, dtrain: softkappaObj(preds, dtrain, hess_scale=param['hess_scale'])
-                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj, feval=evalerror_softkappa_valid)
+                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj,
+                                    feval=evalerror_softkappa_valid)
                     pred = softmax(bst.predict(dvalid_base))
-                    w = np.asarray(range(1,numOfClass+1))
-                    pred = pred * w[np.newaxis,:]
+                    w = np.asarray(range(1, numOfClass + 1))
+                    pred = pred * w[np.newaxis, :]
                     pred = np.sum(pred, axis=1)
 
-                elif param["task"]  in ["ebc"]:
+                elif param["task"] in ["ebc"]:
                     ## ebc with xgboost
                     obj = lambda preds, dtrain: ebcObj(preds, dtrain)
-                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj, feval=evalerror_ebc_valid)
+                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj,
+                                    feval=evalerror_ebc_valid)
                     pred = sigmoid(bst.predict(dvalid_base))
                     pred = applyEBCRule(pred, hard_threshold=ebc_hard_threshold)
 
-                elif param["task"]  in ["cocr"]:
+                elif param["task"] in ["cocr"]:
                     ## cocr with xgboost
                     obj = lambda preds, dtrain: cocrObj(preds, dtrain)
-                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj, feval=evalerror_cocr_valid)
+                    bst = xgb.train(param, dtrain_base, param['num_round'], watchlist, obj=obj,
+                                    feval=evalerror_cocr_valid)
                     pred = bst.predict(dvalid_base)
                     pred = applyCOCRRule(pred)
 
@@ -244,7 +250,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                                max_features=param['max_features'],
                                                n_jobs=param['n_jobs'],
                                                random_state=param['random_state'])
-                    rf.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                    rf.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
                     pred = rf.predict(X_valid)
 
                 elif param['task'] == "reg_skl_etr":
@@ -253,7 +259,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                               max_features=param['max_features'],
                                               n_jobs=param['n_jobs'],
                                               random_state=param['random_state'])
-                    etr.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                    etr.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
                     pred = etr.predict(X_valid)
 
                 elif param['task'] == "reg_skl_gbm":
@@ -264,7 +270,8 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                                     max_depth=param['max_depth'],
                                                     subsample=param['subsample'],
                                                     random_state=param['random_state'])
-                    gbm.fit(X_train.toarray()[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                    gbm.fit(X_train.toarray()[index_base], labels_train[index_base] + 1,
+                            sample_weight=weight_train[index_base])
                     pred = gbm.predict(X_valid.toarray())
 
                 elif param['task'] == "clf_skl_lr":
@@ -272,10 +279,10 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                             C=param['C'], fit_intercept=True, intercept_scaling=1.0,
                                             class_weight='auto', random_state=param['random_state'])
-                    lr.fit(X_train[index_base], labels_train[index_base]+1)
+                    lr.fit(X_train[index_base], labels_train[index_base] + 1)
                     pred = lr.predict_proba(X_valid)
-                    w = np.asarray(range(1,numOfClass+1))
-                    pred = pred * w[np.newaxis,:]
+                    w = np.asarray(range(1, numOfClass + 1))
+                    pred = pred * w[np.newaxis, :]
                     pred = np.sum(pred, axis=1)
 
                 elif param['task'] == "reg_skl_svr":
@@ -285,20 +292,20 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     X_train[index_base] = scaler.fit_transform(X_train[index_base])
                     X_valid = scaler.transform(X_valid)
                     svr = SVR(C=param['C'], gamma=param['gamma'], epsilon=param['epsilon'],
-                                            degree=param['degree'], kernel=param['kernel'])
-                    svr.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                              degree=param['degree'], kernel=param['kernel'])
+                    svr.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
                     pred = svr.predict(X_valid)
 
                 elif param['task'] == "reg_skl_ridge":
                     ## regression with sklearn ridge regression
                     ridge = Ridge(alpha=param["alpha"], normalize=True)
-                    ridge.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                    ridge.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
                     pred = ridge.predict(X_valid)
 
                 elif param['task'] == "reg_skl_lasso":
                     ## regression with sklearn lasso
                     lasso = Lasso(alpha=param["alpha"], normalize=True)
-                    lasso.fit(X_train[index_base], labels_train[index_base]+1)
+                    lasso.fit(X_train[index_base], labels_train[index_base] + 1)
                     pred = lasso.predict(X_valid)
 
                 elif param['task'] == 'reg_libfm':
@@ -313,17 +320,17 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     X_valid = scaler.transform(X_valid)
 
                     ## dump feat
-                    dump_svmlight_file(X_train[index_base], labels_train[index_base], feat_train_path+".tmp")
-                    dump_svmlight_file(X_valid, labels_valid, feat_valid_path+".tmp")
+                    dump_svmlight_file(X_train[index_base], labels_train[index_base], feat_train_path + ".tmp")
+                    dump_svmlight_file(X_valid, labels_valid, feat_valid_path + ".tmp")
 
                     ## train fm
                     cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % ( \
-                                libfm_exe, feat_train_path+".tmp", feat_valid_path+".tmp", raw_pred_valid_path, \
-                                param['dim'], param['iter'])
+                        libfm_exe, feat_train_path + ".tmp", feat_valid_path + ".tmp", raw_pred_valid_path, \
+                        param['dim'], param['iter'])
                     os.system(cmd)
-                    os.remove(feat_train_path+".tmp")
-                    os.remove(feat_valid_path+".tmp")
-                    
+                    os.remove(feat_train_path + ".tmp")
+                    os.remove(feat_valid_path + ".tmp")
+
                     ## extract libfm prediction
                     pred = np.loadtxt(raw_pred_valid_path, dtype=float)
                     ## labels are in [0,1,2,3]
@@ -370,9 +377,9 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     X_valid = scaler.transform(X_valid)
 
                     ## train
-                    model.fit(X_train[index_base], labels_train[index_base]+1,
-                                nb_epoch=param['nb_epoch'], batch_size=param['batch_size'],
-                                validation_split=0, verbose=0)
+                    model.fit(X_train[index_base], labels_train[index_base] + 1,
+                              nb_epoch=param['nb_epoch'], batch_size=param['batch_size'],
+                              validation_split=0, verbose=0)
 
                     ##prediction
                     pred = model.predict(X_valid, verbose=0)
@@ -383,10 +390,10 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     ## to array
                     X_train, X_valid = X_train.toarray(), X_valid.toarray()
 
-                    train_x_fn = feat_train_path+".x"
-                    train_y_fn = feat_train_path+".y"
-                    valid_x_fn = feat_valid_path+".x"
-                    valid_pred_fn = feat_valid_path+".pred"
+                    train_x_fn = feat_train_path + ".x"
+                    train_y_fn = feat_train_path + ".y"
+                    valid_x_fn = feat_valid_path + ".x"
+                    valid_pred_fn = feat_valid_path + ".pred"
 
                     model_fn_prefix = "rgf_model"
 
@@ -397,17 +404,17 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
 
 
                     pars = [
-                        "train_x_fn=",train_x_fn,"\n",
-                        "train_y_fn=",train_y_fn,"\n",
-                        #"train_w_fn=",weight_train_path,"\n",
-                        "model_fn_prefix=",model_fn_prefix,"\n",
+                        "train_x_fn=", train_x_fn, "\n",
+                        "train_y_fn=", train_y_fn, "\n",
+                        # "train_w_fn=",weight_train_path,"\n",
+                        "model_fn_prefix=", model_fn_prefix, "\n",
                         "reg_L2=", param['reg_L2'], "\n",
-                        #"reg_depth=", 1.01, "\n",
-                        "algorithm=","RGF","\n",
-                        "loss=","LS","\n",
-                        #"opt_interval=", 100, "\n",
-                        "valid_interval=", param['max_leaf_forest'],"\n",
-                        "max_leaf_forest=", param['max_leaf_forest'],"\n",
+                        # "reg_depth=", 1.01, "\n",
+                        "algorithm=", "RGF", "\n",
+                        "loss=", "LS", "\n",
+                        # "opt_interval=", 100, "\n",
+                        "valid_interval=", param['max_leaf_forest'], "\n",
+                        "max_leaf_forest=", param['max_leaf_forest'], "\n",
                         "num_iteration_opt=", param['num_iteration_opt'], "\n",
                         "num_tree_search=", param['num_tree_search'], "\n",
                         "min_pop=", param['min_pop'], "\n",
@@ -418,31 +425,30 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                     pars = "".join([str(p) for p in pars])
 
                     rfg_setting_train = "./rfg_setting_train"
-                    with open(rfg_setting_train+".inp", "wb") as f:
+                    with open(rfg_setting_train + ".inp", "wb") as f:
                         f.write(pars)
 
                     ## train fm
                     cmd = "perl %s %s train %s >> rgf.log" % (
-                            call_exe, rgf_exe, rfg_setting_train)
-                    #print cmd
+                        call_exe, rgf_exe, rfg_setting_train)
+                    # print cmd
                     os.system(cmd)
 
-
-                    model_fn = model_fn_prefix + "-01" 
+                    model_fn = model_fn_prefix + "-01"
                     pars = [
-                        "test_x_fn=",valid_x_fn,"\n",
-                        "model_fn=", model_fn,"\n",
+                        "test_x_fn=", valid_x_fn, "\n",
+                        "model_fn=", model_fn, "\n",
                         "prediction_fn=", valid_pred_fn
                     ]
 
                     pars = "".join([str(p) for p in pars])
-                    
+
                     rfg_setting_valid = "./rfg_setting_valid"
-                    with open(rfg_setting_valid+".inp", "wb") as f:
+                    with open(rfg_setting_valid + ".inp", "wb") as f:
                         f.write(pars)
                     cmd = "perl %s %s predict %s >> rgf.log" % (
-                            call_exe, rgf_exe, rfg_setting_valid)
-                    #print cmd
+                        call_exe, rgf_exe, rfg_setting_valid)
+                    # print cmd
                     os.system(cmd)
 
                     pred = np.loadtxt(valid_pred_fn, dtype=float)
@@ -450,26 +456,26 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                 ## weighted averageing over different models
                 pred_valid = pred
                 ## this bagging iteration
-                preds_bagging[:,n] = pred_valid
-                pred_raw = np.mean(preds_bagging[:,:(n+1)], axis=1)
+                preds_bagging[:, n] = pred_valid
+                pred_raw = np.mean(preds_bagging[:, :(n + 1)], axis=1)
                 pred_rank = pred_raw.argsort().argsort()
                 pred_score, cutoff = getScore(pred_rank, cdf_valid, valid=True)
                 kappa_valid = quadratic_weighted_kappa(pred_score, Y_valid)
-                if (n+1) != bagging_size:
+                if (n + 1) != bagging_size:
                     print("              {:>3}   {:>3}   {:>3}   {:>6}   {} x {}".format(
-                                run, fold, n+1, np.round(kappa_valid,6), X_train.shape[0], X_train.shape[1]))
+                        run, fold, n + 1, np.round(kappa_valid, 6), X_train.shape[0], X_train.shape[1]))
                 else:
                     print("                    {:>3}       {:>3}      {:>3}    {:>8}  {} x {}".format(
-                                run, fold, n+1, np.round(kappa_valid,6), X_train.shape[0], X_train.shape[1]))
-            kappa_cv[run-1,fold-1] = kappa_valid
+                        run, fold, n + 1, np.round(kappa_valid, 6), X_train.shape[0], X_train.shape[1]))
+            kappa_cv[run - 1, fold - 1] = kappa_valid
             ## save this prediction
             dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_raw})
             dfPred.to_csv(raw_pred_valid_path, index=False, header=True,
-                         columns=["target", "prediction"])
+                          columns=["target", "prediction"])
             ## save this prediction
             dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_rank})
             dfPred.to_csv(rank_pred_valid_path, index=False, header=True,
-                         columns=["target", "prediction"])
+                          columns=["target", "prediction"])
 
     kappa_cv_mean = np.mean(kappa_cv)
     kappa_cv_std = np.std(kappa_cv)
@@ -503,16 +509,17 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
     raw_pred_test_path = "%s/test.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
     rank_pred_test_path = "%s/test.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
     # submission path (relevance as in [1,2,3,4])
-    subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
+    subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (
+    subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
 
     #### load data
     ## load feat
     X_train, labels_train = load_svmlight_file(feat_train_path)
     X_test, labels_test = load_svmlight_file(feat_test_path)
     if X_test.shape[1] < X_train.shape[1]:
-        X_test = hstack([X_test, np.zeros((X_test.shape[0], X_train.shape[1]-X_test.shape[1]))])
+        X_test = hstack([X_test, np.zeros((X_test.shape[0], X_train.shape[1] - X_test.shape[1]))])
     elif X_test.shape[1] > X_train.shape[1]:
-        X_train = hstack([X_train, np.zeros((X_train.shape[0], X_test.shape[1]-X_train.shape[1]))])
+        X_train = hstack([X_train, np.zeros((X_train.shape[0], X_test.shape[1] - X_train.shape[1]))])
     X_train = X_train.tocsr()
     X_test = X_test.tocsr()
     ## load train weight
@@ -523,38 +530,38 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
     info_test = pd.read_csv(info_test_path)
     numTest = info_test.shape[0]
     id_test = info_test["id"]
-    
+
     ## load cdf
-    cdf_test = np.loadtxt(cdf_test_path, dtype=float)  
+    cdf_test = np.loadtxt(cdf_test_path, dtype=float)
     ##
-    evalerror_regrank_test = lambda preds,dtrain: evalerror_regrank_cdf(preds, dtrain, cdf_test)
-    evalerror_softmax_test = lambda preds,dtrain: evalerror_softmax_cdf(preds, dtrain, cdf_test)
-    evalerror_softkappa_test = lambda preds,dtrain: evalerror_softkappa_cdf(preds, dtrain, cdf_test)
-    evalerror_ebc_test = lambda preds,dtrain: evalerror_ebc_cdf(preds, dtrain, cdf_test, ebc_hard_threshold)
-    evalerror_cocr_test = lambda preds,dtrain: evalerror_cocr_cdf(preds, dtrain, cdf_test)
-                    
+    evalerror_regrank_test = lambda preds, dtrain: evalerror_regrank_cdf(preds, dtrain, cdf_test)
+    evalerror_softmax_test = lambda preds, dtrain: evalerror_softmax_cdf(preds, dtrain, cdf_test)
+    evalerror_softkappa_test = lambda preds, dtrain: evalerror_softkappa_cdf(preds, dtrain, cdf_test)
+    evalerror_ebc_test = lambda preds, dtrain: evalerror_ebc_cdf(preds, dtrain, cdf_test, ebc_hard_threshold)
+    evalerror_cocr_test = lambda preds, dtrain: evalerror_cocr_cdf(preds, dtrain, cdf_test)
+
     ## bagging
     preds_bagging = np.zeros((numTest, bagging_size), dtype=float)
     for n in range(bagging_size):
         if bootstrap_replacement:
-            sampleSize = int(numTrain*bootstrap_ratio)
-            #index_meta = rng.randint(numTrain, size=sampleSize)
-            #index_base = [i for i in range(numTrain) if i not in index_meta]
+            sampleSize = int(numTrain * bootstrap_ratio)
+            # index_meta = rng.randint(numTrain, size=sampleSize)
+            # index_base = [i for i in range(numTrain) if i not in index_meta]
             index_base = rng.randint(numTrain, size=sampleSize)
             index_meta = [i for i in range(numTrain) if i not in index_base]
         else:
             randnum = rng.uniform(size=numTrain)
             index_base = [i for i in range(numTrain) if randnum[i] < bootstrap_ratio]
             index_meta = [i for i in range(numTrain) if randnum[i] >= bootstrap_ratio]
- 
+
         if param.has_key("booster"):
             dtest = xgb.DMatrix(X_test, label=labels_test)
             dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=weight_train[index_base])
-                
+
             watchlist = []
             if verbose_level >= 2:
-                watchlist  = [(dtrain, 'train')]
-                    
+                watchlist = [(dtrain, 'train')]
+
         ## train
         if param["task"] in ["regression", "ranking"]:
             bst = xgb.train(param, dtrain, param['num_round'], watchlist, feval=evalerror_regrank_test)
@@ -563,25 +570,25 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
         elif param["task"] in ["softmax"]:
             bst = xgb.train(param, dtrain, param['num_round'], watchlist, feval=evalerror_softmax_test)
             pred = bst.predict(dtest)
-            w = np.asarray(range(1,numOfClass+1))
-            pred = pred * w[np.newaxis,:]
+            w = np.asarray(range(1, numOfClass + 1))
+            pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
 
         elif param["task"] in ["softkappa"]:
             obj = lambda preds, dtrain: softkappaObj(preds, dtrain, hess_scale=param['hess_scale'])
             bst = xgb.train(param, dtrain, param['num_round'], watchlist, obj=obj, feval=evalerror_softkappa_test)
             pred = softmax(bst.predict(dtest))
-            w = np.asarray(range(1,numOfClass+1))
-            pred = pred * w[np.newaxis,:]
+            w = np.asarray(range(1, numOfClass + 1))
+            pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
 
-        elif param["task"]  in ["ebc"]:
+        elif param["task"] in ["ebc"]:
             obj = lambda preds, dtrain: ebcObj(preds, dtrain)
             bst = xgb.train(param, dtrain, param['num_round'], watchlist, obj=obj, feval=evalerror_ebc_test)
             pred = sigmoid(bst.predict(dtest))
             pred = applyEBCRule(pred, hard_threshold=ebc_hard_threshold)
 
-        elif param["task"]  in ["cocr"]:
+        elif param["task"] in ["cocr"]:
             obj = lambda preds, dtrain: cocrObj(preds, dtrain)
             bst = xgb.train(param, dtrain, param['num_round'], watchlist, obj=obj, feval=evalerror_cocr_test)
             pred = bst.predict(dtest)
@@ -593,7 +600,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                        max_features=param['max_features'],
                                        n_jobs=param['n_jobs'],
                                        random_state=param['random_state'])
-            rf.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+            rf.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
             pred = rf.predict(X_test)
 
         elif param['task'] == "reg_skl_etr":
@@ -602,7 +609,7 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                       max_features=param['max_features'],
                                       n_jobs=param['n_jobs'],
                                       random_state=param['random_state'])
-            etr.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+            etr.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
             pred = etr.predict(X_test)
 
         elif param['task'] == "reg_skl_gbm":
@@ -613,17 +620,17 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
                                             max_depth=param['max_depth'],
                                             subsample=param['subsample'],
                                             random_state=param['random_state'])
-            gbm.fit(X_train.toarray()[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+            gbm.fit(X_train.toarray()[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
             pred = gbm.predict(X_test.toarray())
 
         elif param['task'] == "clf_skl_lr":
             lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                     C=param['C'], fit_intercept=True, intercept_scaling=1.0,
                                     class_weight='auto', random_state=param['random_state'])
-            lr.fit(X_train[index_base], labels_train[index_base]+1)
+            lr.fit(X_train[index_base], labels_train[index_base] + 1)
             pred = lr.predict_proba(X_test)
-            w = np.asarray(range(1,numOfClass+1))
-            pred = pred * w[np.newaxis,:]
+            w = np.asarray(range(1, numOfClass + 1))
+            pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
 
         elif param['task'] == "reg_skl_svr":
@@ -633,18 +640,18 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             X_train[index_base] = scaler.fit_transform(X_train[index_base])
             X_test = scaler.transform(X_test)
             svr = SVR(C=param['C'], gamma=param['gamma'], epsilon=param['epsilon'],
-                                    degree=param['degree'], kernel=param['kernel'])
-            svr.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+                      degree=param['degree'], kernel=param['kernel'])
+            svr.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
             pred = svr.predict(X_test)
 
         elif param['task'] == "reg_skl_ridge":
             ridge = Ridge(alpha=param["alpha"], normalize=True)
-            ridge.fit(X_train[index_base], labels_train[index_base]+1, sample_weight=weight_train[index_base])
+            ridge.fit(X_train[index_base], labels_train[index_base] + 1, sample_weight=weight_train[index_base])
             pred = ridge.predict(X_test)
 
         elif param['task'] == "reg_skl_lasso":
             lasso = Lasso(alpha=param["alpha"], normalize=True)
-            lasso.fit(X_train[index_base], labels_train[index_base]+1)
+            lasso.fit(X_train[index_base], labels_train[index_base] + 1)
             pred = lasso.predict(X_test)
 
         elif param['task'] == 'reg_libfm':
@@ -657,17 +664,17 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             X_test = scaler.transform(X_test)
 
             ## dump feat
-            dump_svmlight_file(X_train[index_base], labels_train[index_base], feat_train_path+".tmp")
-            dump_svmlight_file(X_test, labels_test, feat_test_path+".tmp")
+            dump_svmlight_file(X_train[index_base], labels_train[index_base], feat_train_path + ".tmp")
+            dump_svmlight_file(X_test, labels_test, feat_test_path + ".tmp")
 
             ## train fm
             cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % ( \
-                        libfm_exe, feat_train_path+".tmp", feat_test_path+".tmp", raw_pred_test_path, \
-                        param['dim'], param['iter'])
+                libfm_exe, feat_train_path + ".tmp", feat_test_path + ".tmp", raw_pred_test_path, \
+                param['dim'], param['iter'])
             os.system(cmd)
-            os.remove(feat_train_path+".tmp")
-            os.remove(feat_test_path+".tmp")
-            
+            os.remove(feat_train_path + ".tmp")
+            os.remove(feat_test_path + ".tmp")
+
             ## extract libfm prediction
             pred = np.loadtxt(raw_pred_test_path, dtype=float)
             ## labels are in [0,1,2,3]
@@ -714,8 +721,8 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             X_test = scaler.transform(X_test)
 
             ## train
-            model.fit(X_train[index_base], labels_train[index_base]+1,
-                        nb_epoch=param['nb_epoch'], batch_size=param['batch_size'], verbose=0)
+            model.fit(X_train[index_base], labels_train[index_base] + 1,
+                      nb_epoch=param['nb_epoch'], batch_size=param['batch_size'], verbose=0)
 
             ##prediction
             pred = model.predict(X_test, verbose=0)
@@ -725,10 +732,10 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             ## to array
             X_train, X_test = X_train.toarray(), X_test.toarray()
 
-            train_x_fn = feat_train_path+".x"
-            train_y_fn = feat_train_path+".y"
-            test_x_fn = feat_test_path+".x"
-            test_pred_fn = feat_test_path+".pred"
+            train_x_fn = feat_train_path + ".x"
+            train_y_fn = feat_train_path + ".y"
+            test_x_fn = feat_test_path + ".x"
+            test_pred_fn = feat_test_path + ".pred"
 
             model_fn_prefix = "rgf_model"
 
@@ -739,16 +746,16 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
 
 
             pars = [
-                "train_x_fn=",train_x_fn,"\n",
-                "train_y_fn=",train_y_fn,"\n",
-                #"train_w_fn=",weight_train_path,"\n",
-                "model_fn_prefix=",model_fn_prefix,"\n",
+                "train_x_fn=", train_x_fn, "\n",
+                "train_y_fn=", train_y_fn, "\n",
+                # "train_w_fn=",weight_train_path,"\n",
+                "model_fn_prefix=", model_fn_prefix, "\n",
                 "reg_L2=", param['reg_L2'], "\n",
-                #"reg_depth=", 1.01, "\n",
-                "algorithm=","RGF","\n",
-                "loss=","LS","\n",
-                "test_interval=", param['max_leaf_forest'],"\n",
-                "max_leaf_forest=", param['max_leaf_forest'],"\n",
+                # "reg_depth=", 1.01, "\n",
+                "algorithm=", "RGF", "\n",
+                "loss=", "LS", "\n",
+                "test_interval=", param['max_leaf_forest'], "\n",
+                "max_leaf_forest=", param['max_leaf_forest'], "\n",
                 "num_iteration_opt=", param['num_iteration_opt'], "\n",
                 "num_tree_search=", param['num_tree_search'], "\n",
                 "min_pop=", param['min_pop'], "\n",
@@ -759,60 +766,57 @@ def hyperopt_obj(param, feat_folder, feat_name, trial_counter):
             pars = "".join([str(p) for p in pars])
 
             rfg_setting_train = "./rfg_setting_train"
-            with open(rfg_setting_train+".inp", "wb") as f:
+            with open(rfg_setting_train + ".inp", "wb") as f:
                 f.write(pars)
 
             ## train fm
             cmd = "perl %s %s train %s >> rgf.log" % (
-                    call_exe, rgf_exe, rfg_setting_train)
-            #print cmd
+                call_exe, rgf_exe, rfg_setting_train)
+            # print cmd
             os.system(cmd)
 
-
-            model_fn = model_fn_prefix + "-01" 
+            model_fn = model_fn_prefix + "-01"
             pars = [
-                "test_x_fn=",test_x_fn,"\n",
-                "model_fn=", model_fn,"\n",
+                "test_x_fn=", test_x_fn, "\n",
+                "model_fn=", model_fn, "\n",
                 "prediction_fn=", test_pred_fn
             ]
 
             pars = "".join([str(p) for p in pars])
-            
+
             rfg_setting_test = "./rfg_setting_test"
-            with open(rfg_setting_test+".inp", "wb") as f:
+            with open(rfg_setting_test + ".inp", "wb") as f:
                 f.write(pars)
             cmd = "perl %s %s predict %s >> rgf.log" % (
-                    call_exe, rgf_exe, rfg_setting_test)
-            #print cmd
+                call_exe, rgf_exe, rfg_setting_test)
+            # print cmd
             os.system(cmd)
 
             pred = np.loadtxt(test_pred_fn, dtype=float)
 
         ## weighted averageing over different models
         pred_test = pred
-        preds_bagging[:,n] = pred_test
+        preds_bagging[:, n] = pred_test
     pred_raw = np.mean(preds_bagging, axis=1)
     pred_rank = pred_raw.argsort().argsort()
     #
     ## write
-    output = pd.DataFrame({"id": id_test, "prediction": pred_raw})    
+    output = pd.DataFrame({"id": id_test, "prediction": pred_raw})
     output.to_csv(raw_pred_test_path, index=False)
 
     ## write
-    output = pd.DataFrame({"id": id_test, "prediction": pred_rank})    
+    output = pd.DataFrame({"id": id_test, "prediction": pred_rank})
     output.to_csv(rank_pred_test_path, index=False)
 
     ## write score
     pred_score = getScore(pred, cdf_test)
-    output = pd.DataFrame({"id": id_test, "prediction": pred_score})    
+    output = pd.DataFrame({"id": id_test, "prediction": pred_score})
     output.to_csv(subm_path, index=False)
-    #"""
-        
+    # """
+
     return kappa_cv_mean, kappa_cv_std
 
 
-
-    
 ####################
 ## Model Buliding ##
 ####################
@@ -825,6 +829,7 @@ def check_model(models, feat_name):
             return True
     return False
 
+
 if __name__ == "__main__":
     specified_models = sys.argv[1:]
     if len(specified_models) == 0:
@@ -836,46 +841,46 @@ if __name__ == "__main__":
     log_path = "%s/Log" % output_path
     if not os.path.exists(log_path):
         os.makedirs(log_path)
-    #判断传入参数中的models是不是已经配置的models
+    # 判断传入参数中的models是不是已经配置的models
     for feat_name, feat_folder in zip(feat_names, feat_folders):
         if not check_model(specified_models, feat_name):
             continue
         param_space = param_spaces[feat_name]
-        #记录日志 到output/***_hyperopt.log
+        # 记录日志 到output/***_hyperopt.log
 
         log_file = "%s/%s_hyperopt.log" % (log_path, feat_name)
-        log_handler = open( log_file, 'wb' )
-        writer = csv.writer( log_handler )
+        log_handler = open(log_file, 'wb')
+        writer = csv.writer(log_handler)
 
-        #每行日志都包含 'trial_counter', 'kappa_mean', 'kappa_std' 三个字段 + 模型参数
-        headers = [ 'trial_counter', 'kappa_mean', 'kappa_std' ]
-        for k,v in sorted(param_space.items()):
+        # 每行日志都包含 'trial_counter', 'kappa_mean', 'kappa_std' 三个字段 + 模型参数
+        headers = ['trial_counter', 'kappa_mean', 'kappa_std']
+        for k, v in sorted(param_space.items()):
             headers.append(k)
-        writer.writerow( headers )
+        writer.writerow(headers)
         log_handler.flush()
-        
+
         print("************************************************************")
         print("Search for the best params")
-        #global trial_counter
+        # global trial_counter
         trial_counter = 0
         trials = Trials()
         objective = lambda p: hyperopt_wrapper(p, feat_folder, feat_name)
         best_params = fmin(objective, param_space, algo=tpe.suggest,
                            trials=trials, max_evals=param_space["max_evals"])
-        #把best_params包含的数字属性转成int
+        # 把best_params包含的数字属性转成int
         for f in int_feat:
             if best_params.has_key(f):
                 best_params[f] = int(best_params[f])
         print("************************************************************")
         print("Best params")
-        for k,v in best_params.items():
-            print "        %s: %s" % (k,v)
-        #获取尝试的losses
+        for k, v in best_params.items():
+            print "        %s: %s" % (k, v)
+        # 获取尝试的losses
         trial_kappas = -np.asarray(trials.losses(), dtype=float)
         best_kappa_mean = max(trial_kappas)
-        #where返回两个维度的坐标
+        # where返回两个维度的坐标
         ind = np.where(trial_kappas == best_kappa_mean)[0][0]
-        #找到最优参数的std
+        # 找到最优参数的std
         best_kappa_std = trials.trial_attachments(trials.trials[ind])['std']
         print("Kappa stats")
         print("        Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))

@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
     
@@ -15,14 +15,13 @@ __author__
 """
 
 import sys
+
 sys.path.append("../")
 from code_new.param_config import config
-from gen_info import gen_info
+from competition.preprocess.gen_info import gen_info
 from combine_feat import combine_feat, SimpleTransform
 
-            
 if __name__ == "__main__":
-
     feat_names = [
 
         ##############
@@ -350,7 +349,7 @@ if __name__ == "__main__":
         # ("description_bigram_dice_dist_stats_feat_by_query_relevance", SimpleTransform()),
         # ("description_trigram_dice_dist_stats_feat_by_relevance", SimpleTransform()),
         # ("description_trigram_dice_dist_stats_feat_by_query_relevance", SimpleTransform()),
-        
+
         ############
         ## TF-IDF ##
         ############
@@ -371,18 +370,22 @@ if __name__ == "__main__":
         # ('description_tfidf_common_vocabulary_common_svd150', SimpleTransform()),
         # ('description_tfidf_common_vocabulary_common_svd150_cosine_sim_stats_feat_by_relevance', SimpleTransform()),
         # ('description_tfidf_common_vocabulary_common_svd150_cosine_sim_stats_feat_by_query_relevance', SimpleTransform()),
-        ('query_tfidf_common_vocabulary_title_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim', SimpleTransform()),
-        ('query_tfidf_common_vocabulary_description_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim', SimpleTransform()),
-        ('title_tfidf_common_vocabulary_description_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim', SimpleTransform()),
+        ('query_tfidf_common_vocabulary_title_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim',
+         SimpleTransform()),
+        ('query_tfidf_common_vocabulary_description_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim',
+         SimpleTransform()),
+        ('title_tfidf_common_vocabulary_description_tfidf_common_vocabulary_tfidf_common_svd150_cosine_sim',
+         SimpleTransform()),
         ('query_tfidf_common_vocabulary_individual_svd150', SimpleTransform()),
         ('title_tfidf_common_vocabulary_individual_svd150', SimpleTransform()),
         ('title_tfidf_common_vocabulary_individual_svd150_cosine_sim_stats_feat_by_relevance', SimpleTransform()),
         ('title_tfidf_common_vocabulary_individual_svd150_cosine_sim_stats_feat_by_query_relevance', SimpleTransform()),
         ('description_tfidf_common_vocabulary_individual_svd150', SimpleTransform()),
         ('description_tfidf_common_vocabulary_individual_svd150_cosine_sim_stats_feat_by_relevance', SimpleTransform()),
-        ('description_tfidf_common_vocabulary_individual_svd150_cosine_sim_stats_feat_by_query_relevance', SimpleTransform()),
+        ('description_tfidf_common_vocabulary_individual_svd150_cosine_sim_stats_feat_by_query_relevance',
+         SimpleTransform()),
 
     ]
 
     gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
-    combine_feat(feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")    
+    combine_feat(feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")

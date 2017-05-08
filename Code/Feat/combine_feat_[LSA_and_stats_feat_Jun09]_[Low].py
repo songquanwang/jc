@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
     
@@ -15,14 +15,13 @@ __author__
 """
 
 import sys
+
 sys.path.append("../")
 from param_config import config
 from gen_info import gen_info
 from combine_feat import combine_feat, SimpleTransform
 
-            
 if __name__ == "__main__":
-
     feat_names = [
 
         ##############
@@ -350,7 +349,7 @@ if __name__ == "__main__":
         # ("description_bigram_dice_dist_stats_feat_by_query_relevance", SimpleTransform()),
         # ("description_trigram_dice_dist_stats_feat_by_relevance", SimpleTransform()),
         # ("description_trigram_dice_dist_stats_feat_by_query_relevance", SimpleTransform()),
-        
+
         ############
         ## TF-IDF ##
         ############

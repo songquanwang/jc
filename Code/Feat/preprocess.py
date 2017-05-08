@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -16,9 +16,12 @@ __author__
 
 import sys
 import cPickle
+
 import numpy as np
 import pandas as pd
-from nlp_utils import clean_text, pos_tag_text
+
+from nlp_utils import clean_text
+
 sys.path.append("../")
 from param_config import config
 
@@ -50,14 +53,14 @@ dfTest["index"] = np.arange(num_test)
 
 ## one-hot encode the median_relevance ：dummy
 for i in range(config.n_classes):
-    dfTrain["median_relevance_%d" % (i+1)] = 0
-    dfTrain["median_relevance_%d" % (i+1)][dfTrain["median_relevance"]==(i+1)] = 1
-    
+    dfTrain["median_relevance_%d" % (i + 1)] = 0
+    dfTrain["median_relevance_%d" % (i + 1)][dfTrain["median_relevance"] == (i + 1)] = 1
+
 ## query ids
 qid_dict = dict()
-for i,q in enumerate(np.unique(dfTrain["query"]), start=1):
+for i, q in enumerate(np.unique(dfTrain["query"]), start=1):
     qid_dict[q] = i
-    
+
 ## insert query id
 dfTrain["qid"] = map(lambda q: qid_dict[q], dfTrain["query"])
 dfTest["qid"] = map(lambda q: qid_dict[q], dfTest["query"])
@@ -79,9 +82,8 @@ with open(config.processed_train_data_path, "wb") as f:
     cPickle.dump(dfTrain, f, -1)
 with open(config.processed_test_data_path, "wb") as f:
     cPickle.dump(dfTest, f, -1)
-    
-print("Done.")
 
+print("Done.")
 
 """
 ## pos tag text

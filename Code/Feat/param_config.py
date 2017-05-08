@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 __file__
 
@@ -15,6 +15,7 @@ __author__
 """
 
 import os
+
 import numpy as np
 
 
@@ -25,13 +26,13 @@ class ParamConfig:
     def __init__(self,
                  feat_folder,
                  drop_html_flag,
-                 basic_tfidf_ngram_range=(1,3),
+                 basic_tfidf_ngram_range=(1, 3),
                  basic_tfidf_vocabulary_type="common",
-                 cooccurrence_tfidf_ngram_range=(1,1),
+                 cooccurrence_tfidf_ngram_range=(1, 1),
                  cooccurrence_word_exclude_stopword=False,
                  stemmer_type="snowball",
                  count_feat_transform=np.sqrt):
-    
+
         self.n_classes = 4
 
         ## CV params
@@ -69,8 +70,8 @@ class ParamConfig:
             os.makedirs("%s/All" % self.feat_folder)
 
         ## creat folder for each run and fold
-        for run in range(1,self.n_runs+1):
-            for fold in range(1,self.n_folds+1):
+        for run in range(1, self.n_runs + 1):
+            for fold in range(1, self.n_folds + 1):
                 path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
                 if not os.path.exists(path):
                     os.makedirs(path)

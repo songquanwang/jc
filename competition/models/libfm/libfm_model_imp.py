@@ -29,7 +29,8 @@ class GbdtModelImp(ModelInter):
         X_train = matrix.X_train.toarray()
         X_train[matrix.index_base] = scaler.fit_transform(X_train[matrix.index_base])
         ## dump feat
-        dump_svmlight_file(X_train[matrix.index_base], matrix.labels_train[matrix.index_base], self.feat_train_path + ".tmp")
+        dump_svmlight_file(X_train[matrix.index_base], matrix.labels_train[matrix.index_base],
+                           self.feat_train_path + ".tmp")
         if all:
             X_test = matrix.X_test.toarray()
             X_test = scaler.transform(X_test)
@@ -37,7 +38,8 @@ class GbdtModelImp(ModelInter):
 
             ## train fm
             cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % ( \
-                model_param_conf.libfm_exe, matrix.feat_train_path + ".tmp", matrix.feat_test_path + ".tmp", matrix.raw_pred_test_path, \
+                model_param_conf.libfm_exe, matrix.feat_train_path + ".tmp", matrix.feat_test_path + ".tmp",
+                matrix.raw_pred_test_path, \
                 matrix.param['dim'], matrix.param['iter'])
             os.system(cmd)
             os.remove(matrix.feat_train_path + ".tmp")
@@ -53,7 +55,8 @@ class GbdtModelImp(ModelInter):
 
             ## train fm
             cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % ( \
-                model_param_conf.libfm_exe, matrix.feat_train_path + ".tmp", matrix.feat_valid_path + ".tmp", matrix.raw_pred_valid_path, \
+                model_param_conf.libfm_exe, matrix.feat_train_path + ".tmp", matrix.feat_valid_path + ".tmp",
+                matrix.raw_pred_valid_path, \
                 matrix.param['dim'], matrix.param['iter'])
             os.system(cmd)
             os.remove(matrix.feat_train_path + ".tmp")
