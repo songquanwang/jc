@@ -97,6 +97,7 @@ class ModelInter(object):
             X_train = hstack([X_train, np.zeros((X_train.shape[0], X_test.shape[1] - X_train.shape[1]))])
         X_train = X_train.tocsr()
         X_test = X_test.tocsr()
+        # 赋给成员变量
         self.X_train, self.labels_train, self.X_test, self.labels_test = X_train, labels_train, X_test, labels_test
         # weight
         self.weight_train = np.loadtxt(self.weight_train_path, dtype=float)
@@ -318,7 +319,6 @@ class ModelInter(object):
         print("************************************************************")
         print("Search for the best params")
         # global trial_counter
-        trial_counter = 0
         trials = Trials()
         objective = lambda p: self.hyperopt_wrapper(p, feat_folder, feat_name)
         best_params = fmin(objective, param_space, algo=tpe.suggest,
