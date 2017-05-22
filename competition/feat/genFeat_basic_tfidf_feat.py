@@ -71,7 +71,8 @@ def cosine_sim(x, y):
 ## generate distance stats feat
 def generate_dist_stats_feat(metric, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
     """
-    生成距离状态特征
+    生成距离状态特征，每一行是一个向量，计算行之间的距离
+    相互距离的最小值，中位数、最大值、平均值、方差
     :param metric: 距离度量标准 cosine/euclidean
     :param X_train:
     :param ids_train:
@@ -84,32 +85,40 @@ def generate_dist_stats_feat(metric, X_train, ids_train, X_test, ids_test, indic
     stats_feat_num：全局
 
     """
+
     if metric == "cosine":
         # 生成 len(ids_test)行，class(分类个数)列的 多维数组
         stats_feat = 0 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
+        # sim 0-1 1完全相同
         sim = 1. - pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
     elif metric == "euclidean":
         stats_feat = -1 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
+        #返回xtest行 xtrain列的array
         sim = pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
 
     for i in range(len(ids_test)):
         id = ids_test[i]
         if qids_test is not None:
             qid = qids_test[i]
+        # 一行分别于某一类的距离做比较
         for j in range(config.n_classes):
             # if赋值语句
             key = (qid, j + 1) if qids_test is not None else j + 1
             if indices_dict.has_key(key):
                 inds = indices_dict[key]
                 # exclude this sample itself from the list of indices
+
                 inds = [ind for ind in inds if id != ids_train[ind]]
                 sim_tmp = sim[i][inds]
                 if len(sim_tmp) != 0:
+                    #距离的平均值、方差
                     feat = [func(sim_tmp) for func in stats_func]
                     ## quantile
                     sim_tmp = pd.Series(sim_tmp)
+                    # 距离的最小值、中位数、最大值
                     quantiles = sim_tmp.quantile(quantiles_range)
                     feat = np.hstack((feat, quantiles))
+                    # 每一行生成 [五个值的数组]
                     stats_feat[i, j * stats_feat_num:(j + 1) * stats_feat_num] = feat
     return stats_feat
 
