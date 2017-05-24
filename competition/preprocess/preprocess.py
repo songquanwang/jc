@@ -153,3 +153,9 @@ def gen_stratified_kfold():
                 print(validInd[:10])
         with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, stratified_label), "wb") as f:
             cPickle.dump(skf, f, -1)
+
+
+if __name__ == "__main__":
+    init_path()
+    preprocess()
+    gen_stratified_kfold()

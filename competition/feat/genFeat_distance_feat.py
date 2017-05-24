@@ -31,8 +31,6 @@ __author__
 
 """
 
-import re
-import sys
 import cPickle
 from copy import copy
 
@@ -40,14 +38,14 @@ import numpy as np
 import pandas as pd
 
 from competition.feat.nlp import ngram
-from competition.feat.nlp.nlp_utils import stopwords, english_stemmer, stem_tokens
 from competition.feat.utils.feat_utils import try_divide, get_sample_indices_by_relevance, dump_feat_name
+import competition.conf.model_params_conf as  config
+from competition.feat.nlp.nlp_utils import preprocess_data
 
-sys.path.append("../")
-from code_new.param_config import config
 
-## stats feat is quite time-consuming to generate
-## (about 2 days to generate on my computer)
+
+# stats feat is quite time-consuming to generate
+# (about 2 days to generate on my computer)
 stats_feat_flag = False
 
 
@@ -78,7 +76,7 @@ def compute_dist(A, B, dist="jaccard_coef"):
     return d
 
 
-#### pairwise distance
+# pairwise distance
 def pairwise_jaccard_coef(A, B):
     coef = np.zeros((A.shape[0], B.shape[0]), dtype=float)
     for i in range(A.shape[0]):
@@ -103,33 +101,38 @@ def pairwise_dist(A, B, dist="jaccard_coef"):
     return d
 
 
-######################
-## Pre-process data ##
-######################
-token_pattern = r"(?u)\b\w\w+\b"
-# token_pattern = r'\w{1,}'
-# token_pattern = r"\w+"
-# token_pattern = r"[\w']+"
-transform = config.count_feat_transform
+def gen_temp_feat(df):
+    """
+    用户组合其他特征的临时特征，这些基本特征会用到
+    :param df:
+    :return:
+    """
+    # unigram
+    print "generate unigram"
+    df["query_unigram"] = list(df.apply(lambda x: preprocess_data(x["query"]), axis=1))
+    df["title_unigram"] = list(df.apply(lambda x: preprocess_data(x["product_title"]), axis=1))
+    df["description_unigram"] = list(df.apply(lambda x: preprocess_data(x["product_description"]), axis=1))
+    ## bigram
+    print "generate bigram"
+    join_str = "_"
+    df["query_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["query_unigram"], join_str), axis=1))
+    df["title_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["title_unigram"], join_str), axis=1))
+    df["description_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["description_unigram"], join_str), axis=1))
+    ## trigram
+    print "generate trigram"
+    join_str = "_"
+    df["query_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["query_unigram"], join_str), axis=1))
+    df["title_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["title_unigram"], join_str), axis=1))
+    df["description_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["description_unigram"], join_str), axis=1))
+    return df
 
 
-def preprocess_data(line, token_pattern=token_pattern,
-                    exclude_stopword=config.cooccurrence_word_exclude_stopword,
-                    encode_digit=False):
-    token_pattern = re.compile(token_pattern, flags=re.UNICODE | re.LOCALE)
-    ## tokenize
-    tokens = [x.lower() for x in token_pattern.findall(line)]
-    ## stem
-    tokens_stemmed = stem_tokens(tokens, english_stemmer)
-    if exclude_stopword:
-        tokens_stemmed = [x for x in tokens_stemmed if x not in stopwords]
-    return tokens_stemmed
-
-
-#####################################
-## Extract basic distance features ##
-#####################################
 def extract_basic_distance_feat(df):
+    """
+    Extract basic distance features
+    :param df:
+    :return:
+    """
     ## unigram
     print "generate unigram"
     df["query_unigram"] = list(df.apply(lambda x: preprocess_data(x["query"]), axis=1))
@@ -165,11 +168,18 @@ def extract_basic_distance_feat(df):
                             axis=1))
 
 
-###########################################
-## Extract statistical distance features ##
-###########################################
-## generate dist stats feat
 def generate_dist_stats_feat(dist, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
+    """
+    Extract statistical distance feature
+    :param dist:
+    :param X_train:
+    :param ids_train:
+    :param X_test:
+    :param ids_test:
+    :param indices_dict:
+    :param qids_test:
+    :return:
+    """
     stats_feat = 0 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
     ## pairwise dist
     distance = pairwise_dist(X_test, X_train, dist)
@@ -199,7 +209,7 @@ def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
     ## get the indices of pooled samples
     relevance_indices_dict = get_sample_indices_by_relevance(dfTrain)
     query_relevance_indices_dict = get_sample_indices_by_relevance(dfTrain, "qid")
-    ## very time consuming
+    # very time consuming
     for dist in ["jaccard_coef", "dice_dist"]:
         for name in ["title", "description"]:
             for gram in ["unigram", "bigram", "trigram"]:
@@ -248,15 +258,24 @@ def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
     return new_feat_names
 
 
-##########
-## Main ##
-##########
+def gen_distance_by_feat_names(dfTrain, dfTest, mode, feat_names):
+    for feat_name in feat_names:
+        X_train = dfTrain[feat_name]
+        dfTest = dfTest[feat_name]
+        with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
+            cPickle.dump(X_train, f, -1)
+        with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
+            cPickle.dump(dfTest, f, -1)
+        ## extract statistical distance features
+        if stats_feat_flag:
+            dfTrain_copy = dfTrain.copy()
+            dfTest_copy = dfTest.copy()
+            extract_statistical_distance_feat(path, dfTrain_copy, dfTest_copy, mode, feat_names)
+
+
 if __name__ == "__main__":
 
-    ###############
-    ## Load Data ##
-    ###############
-    ## load data
+    # Load Data
     with open(config.processed_train_data_path, "rb") as f:
         dfTrain = cPickle.load(f)
     with open(config.processed_test_data_path, "rb") as f:
@@ -265,15 +284,15 @@ if __name__ == "__main__":
     with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
         skf = cPickle.load(f)
 
-
     ## file to save feat names
     feat_name_file = "%s/distance.feat_name" % config.feat_folder
 
-
-    ## stats to extract
+    # stats to extract
     quantiles_range = np.arange(0, 1.5, 0.5)
     stats_func = [np.mean, np.std]
     stats_feat_num = len(quantiles_range) + len(stats_func)
+
+    feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]
 
     #######################
     ## Generate Features ##
@@ -281,46 +300,30 @@ if __name__ == "__main__":
     print("==================================================")
     print("Generate distance features...")
 
+    gen_temp_feat(dfTrain)
+    gen_temp_feat(dfTest)
     extract_basic_distance_feat(dfTrain)
-    feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]
+    ## use full version for X_train
+    extract_basic_distance_feat(dfTest)
+
 
     print("For cross-validation...")
     for run in range(config.n_runs):
-        ## use 33% for training and 67 % for validation
-        ## so we switch trainInd and validInd
+        # use 33% for training and 67 % for validation,so we switch trainInd and validInd
         for fold, (validInd, trainInd) in enumerate(skf[run]):
             print("Run: %d, Fold: %d" % (run + 1, fold + 1))
             path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
 
-            for feat_name in feat_names:
-                X_train = dfTrain[feat_name].values[trainInd]
-                X_valid = dfTrain[feat_name].values[validInd]
-                with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
-                    cPickle.dump(X_train, f, -1)
-                with open("%s/valid.%s.feat.pkl" % (path, feat_name), "wb") as f:
-                    cPickle.dump(X_valid, f, -1)
-            ## extract statistical distance features
-            if stats_feat_flag:
-                dfTrain2 = dfTrain.iloc[trainInd].copy()
-                dfValid = dfTrain.iloc[validInd].copy()
-                extract_statistical_distance_feat(path, dfTrain2, dfValid, "valid", feat_names)
+            X_train_train = dfTrain.iloc[trainInd]
+            X_train_valid = dfTrain.iloc[validInd]
+            gen_distance_by_feat_names(X_train_train, X_train_valid, "valid", feat_names)
 
     print("Done.")
 
     print("For training and testing...")
     path = "%s/All" % config.feat_folder
-    ## use full version for X_train
-    extract_basic_distance_feat(dfTest)
-    for feat_name in feat_names:
-        X_train = dfTrain[feat_name].values
-        X_test = dfTest[feat_name].values
-        with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
-            cPickle.dump(X_train, f, -1)
-        with open("%s/test.%s.feat.pkl" % (path, feat_name), "wb") as f:
-            cPickle.dump(X_test, f, -1)
-    ## extract statistical distance features
-    if stats_feat_flag:
-        feat_names = extract_statistical_distance_feat(path, dfTrain, dfTest, "test", feat_names)
+
+    gen_distance_by_feat_names(dfTrain, dfTest, "test", feat_names)
 
     ## save feat names
     print("Feature names are stored in %s" % feat_name_file)

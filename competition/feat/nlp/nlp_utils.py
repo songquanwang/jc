@@ -223,3 +223,35 @@ def clean_text(line, drop_html_flag=False):
 ###################
 def drop_html(html):
     return BeautifulSoup(html).get_text(separator=" ")
+
+
+
+
+# (?u)就是启用Unicode dependent特性；用户匹配带汉字的文本
+# java 正则表达式例如: \w ，在字符串中被当成转移字符，所以加上\\w;python中r（raw string）可以把字符串当成普通字符处理
+token_pattern = r"(?u)\b\w\w+\b"
+# token_pattern = r'\w{1,}'
+# token_pattern = r"\w+"
+# token_pattern = r"[\w']+"
+def preprocess_data(line, token_pattern=token_pattern, exclude_stopword=config.cooccurrence_word_exclude_stopword,
+                    encode_digit=False):
+    """
+    Pre-process data 预处理每一行
+    1.分词
+    2.词根
+    3.去除停用词
+    :param line:
+    :param token_pattern:
+    :param exclude_stopword:
+    :param encode_digit:
+    :return:
+    """
+    token_pattern = re.compile(token_pattern, flags=re.UNICODE | re.LOCALE)
+    ## tokenize 分词
+    tokens = [x.lower() for x in token_pattern.findall(line)]
+    ## stem 词根
+    tokens_stemmed = stem_tokens(tokens, english_stemmer)
+    # 停用词
+    if exclude_stopword:
+        tokens_stemmed = [x for x in tokens_stemmed if x not in stopwords]
+    return tokens_stemmed

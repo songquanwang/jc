@@ -53,3 +53,5 @@ def dump_feat_name(feat_names, feat_name_file):
                 f.write("('%s', SimpleTransform(config.count_feat_transform)),\n" % feat_name)
             else:
                 f.write("('%s', SimpleTransform()),\n" % feat_name)
+
+

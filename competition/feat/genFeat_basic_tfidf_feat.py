@@ -466,7 +466,6 @@ def extract_feat(path, dfTrain, dfTest, vec_type, mode, feat_names, column_names
         #返回 类别-qid为键，序号数组为值的字典
         query_relevance_indices_dict = get_sample_indices_by_relevance(dfTrain, "qid")
 
-    #
     feat_list = gen_bow_tfidf_by_feat_column_names(vec_type, mode, vocabulary, feat_names, column_names)
     new_feat_names.extend(feat_list)
 
@@ -513,6 +512,7 @@ if __name__ == "__main__":
     svd_n_components = [100, 150]
     # 降维 ，没用到
     tsne_n_components = [2]
+
     # 三个列名
     column_names = ["query", "product_title", "product_description"]
 
@@ -550,10 +550,8 @@ if __name__ == "__main__":
             for fold, (validInd, trainInd) in enumerate(skf[run]):
                 print("Run: %d, Fold: %d" % (run + 1, fold + 1))
                 path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
-
                 dfTrain_train_train = df_train.iloc[trainInd].copy()
                 dfTrain_train_valid = df_train.iloc[validInd].copy()
-                ## extract feat
                 extract_feat(path, dfTrain_train_train, dfTrain_train_valid, vec_type, "valid", feat_names, column_names)
 
         print("Done.")

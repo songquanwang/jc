@@ -31,7 +31,7 @@ import pandas as pd
 import competition.conf.model_params_conf as  config
 
 
-def gen_run_fold_info(feat_path_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original,Y):
+def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y):
     """
     注意，没有 dfTest，dfTest_original 。 run fold是把训练数据分成 训练和验证两部分
     :param feat_path_name:
@@ -45,7 +45,7 @@ def gen_run_fold_info(feat_path_name, run, fold, dfTrain, trainInd, validInd, df
     """
 
     print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-    path = "%s/%s/Run%d/Fold%d" % (config.feat_folder, feat_path_name, run + 1, fold + 1)
+    path = "%s/%s/Run%d/Fold%d" % (config.feat_folder, feat_name, run + 1, fold + 1)
     if not os.path.exists(path):
         os.makedirs(path)
     ##########################
@@ -81,7 +81,7 @@ def gen_run_fold_info(feat_path_name, run, fold, dfTrain, trainInd, validInd, df
     dfTrain_original.iloc[validInd].to_csv("%s/valid.info" % path, index=False, header=True)
 
 
-def gen_all_info(feat_path_name, dfTrain, dfTest,  dfTrain_original, dfTest_original,Y):
+def gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original, Y):
     """
 
     :param feat_path_name:
@@ -93,7 +93,7 @@ def gen_all_info(feat_path_name, dfTrain, dfTest,  dfTrain_original, dfTest_orig
     :return:
     """
     print("For training and testing...")
-    path = "%s/%s/All" % (config.feat_folder, feat_path_name)
+    path = "%s/%s/All" % (config.feat_folder, feat_name)
     raise_to = 0.5
     var = dfTrain["relevance_variance"].values
     if not os.path.exists(path):
@@ -104,18 +104,19 @@ def gen_all_info(feat_path_name, dfTrain, dfTest,  dfTrain_original, dfTest_orig
     np.savetxt("%s/train.feat.weight" % path, weight, fmt="%.6f")
 
     ## group
-    np.savetxt("%s/%s/All/train.feat.group" % (config.feat_folder, feat_path_name), [dfTrain.shape[0]], fmt="%d")
-    np.savetxt("%s/%s/All/test.feat.group" % (config.feat_folder, feat_path_name), [dfTest.shape[0]], fmt="%d")
+    np.savetxt("%s/%s/All/train.feat.group" % (config.feat_folder, feat_name), [dfTrain.shape[0]], fmt="%d")
+    np.savetxt("%s/%s/All/test.feat.group" % (config.feat_folder, feat_name), [dfTest.shape[0]], fmt="%d")
     ## cdf
     hist_full = np.bincount(Y)
     print (hist_full) / float(sum(hist_full))
     overall_cdf_full = np.cumsum(hist_full) / float(sum(hist_full))
-    np.savetxt("%s/%s/All/test.cdf" % (config.feat_folder, feat_path_name), overall_cdf_full)
+    np.savetxt("%s/%s/All/test.cdf" % (config.feat_folder, feat_name), overall_cdf_full)
     ## info
-    dfTrain_original.to_csv("%s/%s/All/train.info" % (config.feat_folder, feat_path_name), index=False, header=True)
-    dfTest_original.to_csv("%s/%s/All/test.info" % (config.feat_folder, feat_path_name), index=False, header=True)
+    dfTrain_original.to_csv("%s/%s/All/train.info" % (config.feat_folder, feat_name), index=False, header=True)
+    dfTest_original.to_csv("%s/%s/All/test.info" % (config.feat_folder, feat_name), index=False, header=True)
 
-def gen_info(feat_path_name):
+
+def gen_info(feat_name):
     """
     生成模型所用的 weight、cdf、info、group等文件
     :param feat_path_name:
@@ -142,11 +143,22 @@ def gen_info(feat_path_name):
     for run in range(config.n_runs):
         ## use 33% for training and 67 % for validation so we switch trainInd and validInd
         for fold, (validInd, trainInd) in enumerate(skf[run]):
-            gen_run_fold_info(feat_path_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original,Y)
+            gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y)
 
     print("Done.")
 
     print("For training and testing...")
     # 生成all
-    gen_all_info(feat_path_name, dfTrain, dfTest,  dfTrain_original, dfTest_original)
+    gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original)
     print("All Done.")
+
+
+if __name__ == "__main__":
+
+    gen_info(feat_path_name="LSA_and_stats_feat_Jun09")
+
+    gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
+
+    gen_info(feat_path_name="svd100_and_bow_Jun23")
+
+    gen_info(feat_path_name="svd100_and_bow_Jun27")
