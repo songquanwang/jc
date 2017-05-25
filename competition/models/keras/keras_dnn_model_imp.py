@@ -3,7 +3,7 @@ __author__ = 'songquanwang'
 
 from sklearn.preprocessing import StandardScaler
 
-from competition.inter.model_inter import ModelInter
+from competition.models.base_model import BaseModel
 ## keras
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
@@ -11,9 +11,9 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
 
 
-class GbdtModelImp(ModelInter):
+class GbdtModelImp(BaseModel):
     def __init__(self, param, feat_folder, feat_name):
-        super(ModelInter, self).__init__(param, feat_folder, feat_name)
+        super(BaseModel, self).__init__(param, feat_folder, feat_name)
 
     def train_predict(self, matrix, all=False):
         """

@@ -13,11 +13,11 @@ from hyperopt import fmin, tpe, STATUS_OK, Trials
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 from scipy.sparse import hstack
-from competition.conf.param_config import config
+import  competition.conf.model_library_config as config
 import competition.conf.model_library_config as model_conf
 
 
-class ModelInter(object):
+class BaseModel(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, param, feat_folder, feat_name):

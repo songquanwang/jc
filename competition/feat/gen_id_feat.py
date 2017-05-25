@@ -48,8 +48,11 @@ def gen_id_feat_all(id_names, dfTrain, dfTest, lb):
             cPickle.dump(X_test, f, -1)
 
 
-if __name__ == "__main__":
-
+def gen_id_feat():
+    """
+    入口函数
+    :return:
+    """
     id_names = ["qid"]
     with open(config.processed_train_data_path, "rb") as f:
         dfTrain = cPickle.load(f)
@@ -79,3 +82,7 @@ if __name__ == "__main__":
     print("Done.")
 
     print("All Done.")
+
+
+if __name__ == "__main__":
+    gen_id_feat()

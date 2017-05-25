@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import ExtraTreesRegressor
 
-from competition.inter.model_inter import ModelInter
+from competition.models.base_model import BaseModel
 
 
 # 梯度自举树，也是gdbt的实现
@@ -18,9 +18,9 @@ from sklearn.svm import SVR
 import competition.conf.model_params_conf as model_param_conf
 
 
-class GbdtModelImp(ModelInter):
+class GbdtModelImp(BaseModel):
     def __init__(self, param, feat_folder, feat_name):
-        super(ModelInter, self).__init__(param, feat_folder, feat_name)
+        super(BaseModel, self).__init__(param, feat_folder, feat_name)
 
     def train_predict(self, set_obj, all=False):
         """

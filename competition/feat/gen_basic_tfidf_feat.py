@@ -93,7 +93,7 @@ def generate_dist_stats_feat(metric, X_train, ids_train, X_test, ids_test, indic
         sim = 1. - pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
     elif metric == "euclidean":
         stats_feat = -1 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
-        #返回xtest行 xtrain列的array
+        # 返回xtest行 xtrain列的array
         sim = pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
 
     for i in range(len(ids_test)):
@@ -111,7 +111,7 @@ def generate_dist_stats_feat(metric, X_train, ids_train, X_test, ids_test, indic
                 inds = [ind for ind in inds if id != ids_train[ind]]
                 sim_tmp = sim[i][inds]
                 if len(sim_tmp) != 0:
-                    #距离的平均值、方差
+                    # 距离的平均值、方差
                     feat = [func(sim_tmp) for func in stats_func]
                     ## quantile
                     sim_tmp = pd.Series(sim_tmp)
@@ -312,7 +312,7 @@ def extract_svd_cosine_sim_stats_feat_individual(path, dfTrain, dfTest, feat_nam
     return new_feat_names
 
 
-def create_vocabulary(dfTrain, vocabulary_type, vec_type):
+def create_vocabulary(dfTrain, vocabulary_type, vec_type,ngram_range):
     """
     根据vocabulary_type 生成
     :param vocabulary_type:common  individual
@@ -332,7 +332,7 @@ def create_vocabulary(dfTrain, vocabulary_type, vec_type):
     return vocabulary
 
 
-def gen_bow_tfidf_by_feat_column_names(dfTrain, dfTest, vec_type, mode, vocabulary, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
+def gen_bow_tfidf_by_feat_column_names(path,dfTrain, dfTest, vec_type, mode, vocabulary, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
     """
     根据vec_type mode vocabulary 生成
     :param vec_type:'tfidf'/'bow'
@@ -368,7 +368,7 @@ def gen_bow_tfidf_by_feat_column_names(dfTrain, dfTest, vec_type, mode, vocabula
     return new_feat_names
 
 
-def gen_common_svd_by_feat_column_names(dfTrain, dfTest, X_vec_all_train, n_components, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
+def gen_common_svd_by_feat_column_names(path,dfTrain, dfTest, X_vec_all_train, n_components, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
     """
 
     :param X_vec_all_train:
@@ -406,7 +406,7 @@ def gen_common_svd_by_feat_column_names(dfTrain, dfTest, X_vec_all_train, n_comp
     return new_feat_names
 
 
-def gen_individual_svd_by_feat_column_names(dfTrain, dfTest, n_components, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
+def gen_individual_svd_by_feat_column_names(path,dfTrain, dfTest, n_components, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict, feat_names, column_names):
     """
     generate individual svd feat
     :param n_components:
@@ -441,7 +441,7 @@ def gen_individual_svd_by_feat_column_names(dfTrain, dfTest, n_components, vec_t
     return new_feat_names
 
 
-def extract_feat(path, dfTrain, dfTest, vec_type, mode, feat_names, column_names):
+def extract_feat(path, dfTrain, dfTest, vec_type, mode, feat_names, column_names,vocabulary_type,svd_n_components):
     """
     extract all features
     1.fit a bow/tfidf on the all_text to get
@@ -461,9 +461,9 @@ def extract_feat(path, dfTrain, dfTest, vec_type, mode, feat_names, column_names
     # 找出所有的词汇
     vocabulary = create_vocabulary(vocabulary_type, vec_type)
     if stats_feat_flag:
-        #返回 类别为键，序号数组为值的字典
+        # 返回 类别为键，序号数组为值的字典
         relevance_indices_dict = get_sample_indices_by_relevance(dfTrain)
-        #返回 类别-qid为键，序号数组为值的字典
+        # 返回 类别-qid为键，序号数组为值的字典
         query_relevance_indices_dict = get_sample_indices_by_relevance(dfTrain, "qid")
 
     feat_list = gen_bow_tfidf_by_feat_column_names(vec_type, mode, vocabulary, feat_names, column_names)
@@ -495,7 +495,11 @@ def extract_feat(path, dfTrain, dfTest, vec_type, mode, feat_names, column_names
     return new_feat_names
 
 
-if __name__ == "__main__":
+def gen_basic_tfidf_feat():
+    """
+    入口函数
+    :return:
+    """
     # 分位数，分别计算 0 0.5 1 分位数。 也就是 最小值、中位数、最大值
     quantiles_range = np.arange(0, 1.5, 0.5)
     # 平均值 、标准差
@@ -566,3 +570,7 @@ if __name__ == "__main__":
         dump_feat_name(feat_names, feat_name_file)
 
         print("All Done.")
+
+
+if __name__ == "__main__":
+    gen_basic_tfidf_feat()

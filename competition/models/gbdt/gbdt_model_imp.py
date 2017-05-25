@@ -4,14 +4,14 @@ __author__ = 'songquanwang'
 import numpy as np
 
 import xgboost as xgb
-from competition.inter.model_inter import ModelInter
+from competition.models.base_model import BaseModel
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 
 
-class GbdtModelImp(ModelInter):
+class GbdtModelImp(BaseModel):
     def __init__(self, param, feat_folder, feat_name):
-        super(ModelInter, self).__init__(param, feat_folder, feat_name)
+        super(BaseModel, self).__init__(param, feat_folder, feat_name)
 
     def train_predict(self, set_obj, all=False):
         """
