@@ -100,6 +100,41 @@ def pairwise_dist(A, B, dist="jaccard_coef"):
         d = pairwise_dice_dist(A, B)
     return d
 
+def generate_dist_stats_feat(dist, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
+    """
+    Extract statistical distance feature
+    :param dist:
+    :param X_train:
+    :param ids_train:
+    :param X_test:
+    :param ids_test:
+    :param indices_dict:
+    :param qids_test:
+    :return:
+    """
+    stats_feat = 0 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
+    ## pairwise dist
+    distance = pairwise_dist(X_test, X_train, dist)
+    for i in range(len(ids_test)):
+        id = ids_test[i]
+        if qids_test is not None:
+            qid = qids_test[i]
+        for j in range(config.n_classes):
+            key = (qid, j + 1) if qids_test is not None else j + 1
+            if indices_dict.has_key(key):
+                inds = indices_dict[key]
+                # exclude this sample itself from the list of indices
+                inds = [ind for ind in inds if id != ids_train[ind]]
+                distance_tmp = distance[i][inds]
+                if len(distance_tmp) != 0:
+                    feat = [func(distance_tmp) for func in stats_func]
+                    ## quantile
+                    distance_tmp = pd.Series(distance_tmp)
+                    quantiles = distance_tmp.quantile(quantiles_range)
+                    feat = np.hstack((feat, quantiles))
+                    stats_feat[i, j * stats_feat_num:(j + 1) * stats_feat_num] = feat
+    return stats_feat
+
 
 def gen_temp_feat(df):
     """
@@ -168,43 +203,16 @@ def extract_basic_distance_feat(df):
                             axis=1))
 
 
-def generate_dist_stats_feat(dist, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
+def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
     """
-    Extract statistical distance feature
-    :param dist:
-    :param X_train:
-    :param ids_train:
-    :param X_test:
-    :param ids_test:
-    :param indices_dict:
-    :param qids_test:
+
+    :param path:
+    :param dfTrain:
+    :param dfTest:
+    :param mode:
+    :param feat_names:
     :return:
     """
-    stats_feat = 0 * np.ones((len(ids_test), stats_feat_num * config.n_classes), dtype=float)
-    ## pairwise dist
-    distance = pairwise_dist(X_test, X_train, dist)
-    for i in range(len(ids_test)):
-        id = ids_test[i]
-        if qids_test is not None:
-            qid = qids_test[i]
-        for j in range(config.n_classes):
-            key = (qid, j + 1) if qids_test is not None else j + 1
-            if indices_dict.has_key(key):
-                inds = indices_dict[key]
-                # exclude this sample itself from the list of indices
-                inds = [ind for ind in inds if id != ids_train[ind]]
-                distance_tmp = distance[i][inds]
-                if len(distance_tmp) != 0:
-                    feat = [func(distance_tmp) for func in stats_func]
-                    ## quantile
-                    distance_tmp = pd.Series(distance_tmp)
-                    quantiles = distance_tmp.quantile(quantiles_range)
-                    feat = np.hstack((feat, quantiles))
-                    stats_feat[i, j * stats_feat_num:(j + 1) * stats_feat_num] = feat
-    return stats_feat
-
-
-def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
     new_feat_names = copy(feat_names)
     ## get the indices of pooled samples
     relevance_indices_dict = get_sample_indices_by_relevance(dfTrain)
@@ -214,17 +222,8 @@ def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
         for name in ["title", "description"]:
             for gram in ["unigram", "bigram", "trigram"]:
                 ## train
-                dist_stats_feat_by_relevance_train = generate_dist_stats_feat(dist, dfTrain[name + "_" + gram].values,
-                                                                              dfTrain["id"].values,
-                                                                              dfTrain[name + "_" + gram].values,
-                                                                              dfTrain["id"].values,
-                                                                              relevance_indices_dict)
-                dist_stats_feat_by_query_relevance_train = generate_dist_stats_feat(dist,
-                                                                                    dfTrain[name + "_" + gram].values,
-                                                                                    dfTrain["id"].values,
-                                                                                    dfTrain[name + "_" + gram].values,
-                                                                                    dfTrain["id"].values,
-                                                                                    query_relevance_indices_dict,
+                dist_stats_feat_by_relevance_train = generate_dist_stats_feat(dist, dfTrain[name + "_" + gram].values, dfTrain["id"].values,dfTrain[name + "_" + gram].values,dfTrain["id"].values, relevance_indices_dict)
+                dist_stats_feat_by_query_relevance_train = generate_dist_stats_feat(dist,dfTrain[name + "_" + gram].values,dfTrain["id"].values, dfTrain[name + "_" + gram].values,dfTrain["id"].values,query_relevance_indices_dict,
                                                                                     dfTrain["qid"].values)
                 with open("%s/train.%s_%s_%s_stats_feat_by_relevance.feat.pkl" % (path, name, gram, dist), "wb") as f:
                     cPickle.dump(dist_stats_feat_by_relevance_train, f, -1)
@@ -232,17 +231,8 @@ def extract_statistical_distance_feat(path, dfTrain, dfTest, mode, feat_names):
                           "wb") as f:
                     cPickle.dump(dist_stats_feat_by_query_relevance_train, f, -1)
                 ## test
-                dist_stats_feat_by_relevance_test = generate_dist_stats_feat(dist, dfTrain[name + "_" + gram].values,
-                                                                             dfTrain["id"].values,
-                                                                             dfTest[name + "_" + gram].values,
-                                                                             dfTest["id"].values,
-                                                                             relevance_indices_dict)
-                dist_stats_feat_by_query_relevance_test = generate_dist_stats_feat(dist,
-                                                                                   dfTrain[name + "_" + gram].values,
-                                                                                   dfTrain["id"].values,
-                                                                                   dfTest[name + "_" + gram].values,
-                                                                                   dfTest["id"].values,
-                                                                                   query_relevance_indices_dict,
+                dist_stats_feat_by_relevance_test = generate_dist_stats_feat(dist, dfTrain[name + "_" + gram].values,dfTrain["id"].values, dfTest[name + "_" + gram].values,dfTest["id"].values, relevance_indices_dict)
+                dist_stats_feat_by_query_relevance_test = generate_dist_stats_feat(dist,dfTrain[name + "_" + gram].values,dfTrain["id"].values,dfTest[name + "_" + gram].values,dfTest["id"].values,query_relevance_indices_dict,
                                                                                    dfTest["qid"].values)
                 with open("%s/%s.%s_%s_%s_stats_feat_by_relevance.feat.pkl" % (path, mode, name, gram, dist),
                           "wb") as f:
