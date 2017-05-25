@@ -28,15 +28,15 @@ import competition.conf.model_params_conf as config
 
 
 def init_path():
-    ## create feat folder
+    # create feat folder
     if not os.path.exists(config.feat_folder):
         os.makedirs(config.feat_folder)
 
-    ## creat folder for the training and testing feat
+    #creat folder for the training and testing feat
     if not os.path.exists("%s/All" % config.feat_folder):
         os.makedirs("%s/All" % config.feat_folder)
 
-    ## creat folder for each run and fold
+    # creat folder for each run and fold
     for run in range(1, config.n_runs + 1):
         for fold in range(1, config.n_folds + 1):
             path = "%s/Run%d/Fold%d" % (config.feat_folder, run, fold)
@@ -47,10 +47,10 @@ def init_path():
 def preprocess():
     """
     1.load  train and test data
-   2.add index: 从0 开始编号
-   3.dummy median_relevance_%d
-   4.add qid  :query distinct 后的序号
-   5.替换一些同义词，清除html标记
+    2.add index: 从0 开始编号
+    3.dummy median_relevance：生成median_relevance_1 median_relevance_2 median_relevance_3 median_relevance_4
+    4.add qid  :query distinct 后的序号
+    5.替换一些同义词，清除html标记
     """
 
     print("Load data...")
@@ -128,9 +128,9 @@ def gen_stratified_kfold():
      ALL the following model building parts.
      分层抽取: 根据median_relevance 也就是 0 1 2 3 各种等级抽取近似；qid 不同的关键字抽取近似
      [
-     [[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1]],
-     [run2],
-     [run3]
+         [[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1]],
+         [run2],
+         [run3]
      ]
     """
 

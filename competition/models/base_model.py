@@ -74,8 +74,7 @@ class BaseModel(object):
         raw_pred_test_path = "%s/test.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
         rank_pred_test_path = "%s/test.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
         # submission path (relevance as in [1,2,3,4])
-        subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (
-            subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
+        subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
 
         return raw_pred_test_path, rank_pred_test_path, subm_path
 
@@ -112,11 +111,9 @@ class BaseModel(object):
         self.numTrain = self.info_train.shape[0]
         self.numTest = self.info_test.shape[0]
 
-        # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain,
-                                                     model_param_conf.bootstrap_ratio)
-        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],
-                                  weight=self.weight_train[index_base])
+        # 分割训练数据 index_meta 没用
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain,model_param_conf.bootstrap_ratio)
+        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],weight=self.weight_train[index_base])
         self.dtest = xgb.DMatrix(X_test, label=labels_test)
         # watchlist
         self.watchlist = []
@@ -159,18 +156,15 @@ class BaseModel(object):
         matrix.numValid = matrix.info_valid.shape[0]
 
         # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain,
-                                                     model_param_conf.bootstrap_ratio)
-        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],
-                                    weight=matrix.weight_train[index_base])
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain,model_param_conf.bootstrap_ratio)
+        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],weight=matrix.weight_train[index_base])
         matrix.dvalid = xgb.DMatrix(X_valid, label=labels_valid)
         # watchlist
         matrix.watchlist = []
         if model_param_conf.verbose_level >= 2:
             matrix.watchlist = [(matrix.dtrain_base, 'train'), (matrix.dvalid_base, 'valid')]
 
-    def out_put_run_fold(self, run, fold, bagging, feat_name, trial_counter, kappa_valid, X_train, Y_valid, pred_raw,
-                         pred_rank, kappa_cv):
+    def out_put_run_fold(self, run, fold, bagging, feat_name, trial_counter, kappa_valid, X_train, Y_valid, pred_raw, pred_rank, kappa_cv):
         """
 
         :param run:
@@ -298,19 +292,7 @@ class BaseModel(object):
 
         pred_raw = np.mean(preds_bagging, axis=1)
         pred_rank = pred_raw.argsort().argsort()
-        self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,
-                         pred)
-
-    @abc.abstractmethod
-    def get_id(self):
-        return
-
-    @abc.abstractmethod
-    def get_name(self):
-        return
-
-    def pre_process(self):
-        return
+        self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,pred)
 
     def optmize(self, feat_folder, feat_name):
         param_space = model_conf.param_spaces[feat_name]

@@ -55,7 +55,7 @@ def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain
     var = dfTrain["relevance_variance"].values
     # 最大标准差
     max_var = np.max(var[trainInd] ** raise_to)
-    #     [1+（最大标准差-标准差数组）/最大标准差]/2   --->标准差越大，权重越小  （0.5-1)
+    # [1+（最大标准差-标准差数组）/最大标准差]/2   --->标准差越大，权重越小  （0.5-1)
     weight = (1 + np.power(((max_var - var ** raise_to) / max_var), 1)) / 2.
     # weight = (max_var - var**raise_to) / max_var
     np.savetxt("%s/train.feat.weight" % path, weight[trainInd], fmt="%.6f")
@@ -83,7 +83,7 @@ def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain
 
 def gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original, Y):
     """
-
+    没有test.feat.weight
     :param feat_path_name:
     :param dfTrain:
     :param dfTest:
@@ -122,13 +122,15 @@ def gen_info(feat_name):
     :param feat_path_name:
     :return:
     """
+    # 打开预处理后的数据
     with open(config.processed_train_data_path, "rb") as f:
         dfTrain = cPickle.load(f)
     with open(config.processed_test_data_path, "rb") as f:
         dfTest = cPickle.load(f)
+    # 打开原始数据
     dfTrain_original = pd.read_csv(config.original_train_data_path).fillna("")
     dfTest_original = pd.read_csv(config.original_test_data_path).fillna("")
-    ## insert fake label for test  相关性全置1；方差全置0
+    #为test插入假的label（test没有label） 相关性全置1；方差全置0
     dfTest_original["median_relevance"] = np.ones((dfTest_original.shape[0]))
     dfTest_original["relevance_variance"] = np.zeros((dfTest_original.shape[0]))
     # change it to zero-based for classification
