@@ -57,11 +57,6 @@ class DistanceFeat(BaseFeat):
         self.stats_func = [np.mean, np.std]
         self.stats_feat_num = len(self.quantiles_range) + len(self.stats_func)
 
-    # stats feat is quite time-consuming to generate
-    # (about 2 days to generate on my computer)
-    stats_feat_flag = False
-
-
     #####################
     ## Distance metric ##
     #####################
