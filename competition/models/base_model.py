@@ -7,21 +7,21 @@ import csv
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_svmlight_file
-
 import xgboost as xgb
-from hyperopt import fmin, tpe, STATUS_OK, Trials
+from hyperopt import STATUS_OK
+from scipy.sparse import hstack
+
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
-from scipy.sparse import hstack
-import  competition.conf.model_library_config as config
+import competition.conf.model_library_config as config
 import competition.conf.model_library_config as model_conf
 
 
 class BaseModel(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, param, feat_folder, feat_name):
-        self.param = param
+    def __init__(self, param_space, feat_folder, feat_name):
+        self.param_space = param_space
         self.feat_folder = feat_folder
         self.feat_name = feat_name
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
@@ -29,19 +29,6 @@ class BaseModel(object):
         log_file = "%s/Log/%s_hyperopt.log" % (model_param_conf.output_path, feat_name)
         self.log_handler = open(log_file, 'wb')
         self.writer = csv.writer(self.log_handler)
-
-    @abc.abstractmethod
-    def get_predicts(self, start_date, period, period_number, step=1, in_one_dt=False):
-        """
-
-        :param start_date:
-        :param period:
-        :param period_number:
-        :param step:
-        :param in_one_dt:
-        :return:
-        """
-        return
 
     def init_all_path(self):
         path = "%s/All" % (self.feat_folder)
@@ -85,7 +72,7 @@ class BaseModel(object):
 
         return raw_pred_valid_path, rank_pred_valid_path
 
-    def feature_all(self):
+    def gen_set_obj_all(self):
         # init the path
         self.init_all_path()
         # feat
@@ -111,16 +98,16 @@ class BaseModel(object):
         self.numTrain = self.info_train.shape[0]
         self.numTest = self.info_test.shape[0]
 
-        # 分割训练数据 index_meta 没用
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain,model_param_conf.bootstrap_ratio)
-        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],weight=self.weight_train[index_base])
+        # 对数据进行自举法抽样；因为ratio=1 且bootstrap_replacement=false 说明没有用到，就使用的是全量数据
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain, model_param_conf.bootstrap_ratio)
+        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=self.weight_train[index_base])
         self.dtest = xgb.DMatrix(X_test, label=labels_test)
         # watchlist
         self.watchlist = []
         if model_param_conf.verbose_level >= 2:
             self.watchlist = [(self.dtrain_base, 'train')]
 
-    def feature_run_fold(self, run, fold):
+    def gen_set_obj_run_fold(self, run, fold):
         """
         每个run 每个fold 生成
         :param run:
@@ -155,16 +142,17 @@ class BaseModel(object):
         matrix.numTrain = matrix.info_train.shape[0]
         matrix.numValid = matrix.info_valid.shape[0]
 
-        # 分割训练数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain,model_param_conf.bootstrap_ratio)
-        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base],weight=matrix.weight_train[index_base])
+        # 对数据进行自举法抽样；因为ratio=1 且bootstrap_replacement=false 说明没有用到，就使用的是全量数据
+        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain, model_param_conf.bootstrap_ratio)
+        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=matrix.weight_train[index_base])
         matrix.dvalid = xgb.DMatrix(X_valid, label=labels_valid)
         # watchlist
         matrix.watchlist = []
         if model_param_conf.verbose_level >= 2:
             matrix.watchlist = [(matrix.dtrain_base, 'train'), (matrix.dvalid_base, 'valid')]
+        return matrix
 
-    def out_put_run_fold(self, run, fold, bagging, feat_name, trial_counter, kappa_valid, X_train, Y_valid, pred_raw, pred_rank, kappa_cv):
+    def out_put_run_fold(self, run, fold, feat_name, trial_counter, X_train, Y_valid, pred_raw, pred_rank, kappa_valid):
         """
 
         :param run:
@@ -177,31 +165,19 @@ class BaseModel(object):
         :param Y_valid:
         :param pred_raw:
         :param pred_rank:
-        :param kappa_cv: out parameter;upate and return
         :return:
         """
         raw_pred_valid_path, rank_pred_valid_path = self.get_output_run_fold_path(feat_name, trial_counter, run, fold)
-        kappa_cv[run - 1, fold - 1] = kappa_valid
-        ## save this prediction
+        # save this prediction
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_raw})
-        dfPred.to_csv(raw_pred_valid_path, index=False, header=True,
-                      columns=["target", "prediction"])
-        ## save this prediction
+        dfPred.to_csv(raw_pred_valid_path, index=False, header=True, columns=["target", "prediction"])
+        # save this prediction
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_rank})
-        dfPred.to_csv(rank_pred_valid_path, index=False, header=True,
-                      columns=["target", "prediction"])
-        if (bagging + 1) != model_param_conf.bagging_size:
-            print("              {:>3}   {:>3}   {:>3}   {:>6}   {} x {}".format(
-                run, fold, bagging + 1, np.round(kappa_valid, 6), X_train.shape[0], X_train.shape[1]))
-        else:
-            print("                    {:>3}       {:>3}      {:>3}    {:>8}  {} x {}".format(
-                run, fold, bagging + 1, np.round(kappa_valid, 6), X_train.shape[0], X_train.shape[1]))
+        dfPred.to_csv(rank_pred_valid_path, index=False, header=True, columns=["target", "prediction"])
 
-    def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,
-                    pred):
+    def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank):
 
-        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter,
-                                                                                      kappa_cv_mean, kappa_cv_std)
+        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
         ## write
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
         output.to_csv(raw_pred_test_path, index=False)
@@ -210,45 +186,82 @@ class BaseModel(object):
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_rank})
         output.to_csv(rank_pred_test_path, index=False)
 
-        ## write score
-        pred_score = utils.getScore(pred, self.cdf_test)
+        ## write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
+        pred_score = utils.getScore(pred_raw, self.cdf_test)
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_score})
         output.to_csv(subm_path, index=False)
 
-    def hyperopt_obj(self, feat_folder, feat_name, trial_counter):
+    def gen_bagging(self, set_obj, all):
+        """
+        分袋整合预测结果
+        :param set_obj:
+        :param all:
+        :return:
+        """
+        preds_bagging = np.zeros((self.numTest, model_param_conf.bagging_size), dtype=float)
+        for n in range(model_param_conf.bagging_size):
+            # 调用 每个子类的train_predict方法，多态
+            pred = self.train_predict(self, set_obj, all)
+            pred_test = pred
+            preds_bagging[:, n] = pred_test
+            if not all:
+                # 每次会把当前bagging的结果累计进来 求均值
+                pred_raw = np.mean(preds_bagging[:, :(pred + 1)], axis=1)
+                # 为什么需要两次argsort？
+                pred_rank = pred_raw.argsort().argsort()
+                pred_score, cutoff = utils.getScore(pred_rank, self.cdf_valid, valid=True)
+                kappa_valid = utils.quadratic_weighted_kappa(pred_score, self.Y_valid)
+
+        pred_raw = np.mean(preds_bagging, axis=1)
+        pred_rank = pred_raw.argsort().argsort()
+        if all:
+            return pred_raw, pred_rank
+        else:
+            return pred_raw, pred_rank, kappa_valid
+
+    def hyperopt_obj(self, param, feat_folder, feat_name, trial_counter):
+        """
+        最优化方法 hyperopt_obj
+        :param feat_folder:
+        :param feat_name:
+        :param trial_counter:
+        :return:
+        """
+        # 定义kappa交叉验证结构
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
         for run in range(1, config.n_runs + 1):
             for fold in range(1, config.n_folds + 1):
-                # 生成 run_fold_matrix
-                matrix = self.run_fold_matrix[run][fold]
-                self.feature_run_fold(self, run, fold, matrix)
-                preds_bagging = np.zeros((matrix.numValid, model_param_conf.bagging_size), dtype=float)
-                for n in range(model_param_conf.bagging_size):
-                    pred = self.train_predict(matrix)
-                    ## weighted averageing over different models
-                    pred_valid = pred
-                    ## this bagging iteration
-                    preds_bagging[:, n] = pred_valid
-                    # 每次会把当前bagging的结果累计进来 求均值
-                    pred_raw = np.mean(preds_bagging[:, :(n + 1)], axis=1)
-                    pred_rank = pred_raw.argsort().argsort()
-                    pred_score, cutoff = utils.getScore(pred_rank, self.cdf_valid, valid=True)
-                    kappa_valid = utils.quadratic_weighted_kappa(pred_score, self.Y_valid)
+                # 生成 run_fold_set_obj
+                set_obj = self.gen_set_obj_run_fold(self, run, fold)
+                # bagging结果
+                pred_raw, pred_rank, kappa_valid = self.gen_bagging(self, set_obj, all=False)
                 # 输出文件
-                self.out_put_run_fold(run, fold, n, feat_name, trial_counter, kappa_valid, matrix.X_train,
-                                      matrix.Y_valid, pred_raw, pred_rank, kappa_cv)
-
-        kappa_cv_mean = np.mean(kappa_cv)
-        kappa_cv_std = np.std(kappa_cv)
+                kappa_cv[run - 1, fold - 1] = kappa_valid
+                # 生成没run fold的结果
+                self.out_put_run_fold(run, fold, feat_name, trial_counter, set_obj.X_train, set_obj.Y_valid, pred_raw, pred_rank, kappa_valid)
+        # kappa_cv run*fold*bagging_size 均值和方差
+        kappa_cv_mean, kappa_cv_std = np.mean(kappa_cv), np.std(kappa_cv)
         if model_param_conf.verbose_level >= 1:
             print("              Mean: %.6f" % kappa_cv_mean)
             print("              Std: %.6f" % kappa_cv_std)
+        # # bagging结果
+        pred_raw, pred_rank = self.gen_bagging(self, set_obj, all=True)
         # 生成提交结果
-        self.predict_all(self, feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
-        return kappa_cv_mean, kappa_cv_std
+        self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank)
+        # 记录参数文件
+        self.log_param(param, feat_name, kappa_cv_mean, kappa_cv_std)
+        # 根据交叉验证的平均值作为模型好坏标准
+        return {'loss': -kappa_cv_mean, 'attachments': {'std': kappa_cv_std}, 'status': STATUS_OK}
 
-    def hyperopt_wrapper(self, param, feat_folder, feat_name):
-
+    def log_param(self, param, feat_name, kappa_cv_mean, kappa_cv_std):
+        """
+        记录参数文件
+        :param param:
+        :param feat_name:
+        :param kappa_cv_mean:
+        :param kappa_cv_std:
+        :return:
+        """
         self.trial_counter += 1
         # convert integer feat
         for f in model_conf.int_feat:
@@ -265,10 +278,6 @@ class BaseModel(object):
             print("              %s: %s" % (k, v))
         print("        Result")
         print("                    Run      Fold      Bag      Kappa      Shape")
-
-        ## evaluate performance
-        kappa_cv_mean, kappa_cv_std = self.hyperopt_obj(param, feat_folder, feat_name, self.trial_counter)
-
         ## log
         var_to_log = [
             "%d" % self.trial_counter,
@@ -281,52 +290,18 @@ class BaseModel(object):
         self.writer.writerow(var_to_log)
         self.log_handler.flush()
 
-        return {'loss': -kappa_cv_mean, 'attachments': {'std': kappa_cv_std}, 'status': STATUS_OK}
-
-    def predict_all(self, feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std):
-        preds_bagging = np.zeros((self.numTest, self.bagging_size), dtype=float)
-        for n in range(model_param_conf.bagging_size):
-            pred = self.train_predict(self)
-            pred_test = pred
-            preds_bagging[:, n] = pred_test
-
-        pred_raw = np.mean(preds_bagging, axis=1)
-        pred_rank = pred_raw.argsort().argsort()
-        self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank,pred)
-
-    def optmize(self, feat_folder, feat_name):
-        param_space = model_conf.param_spaces[feat_name]
+    def log_header(self):
+        """
+        log 记录文件头部
+        :return:
+        """
         # 记录日志 到output/***_hyperopt.log
-
         # 每行日志都包含 'trial_counter', 'kappa_mean', 'kappa_std' 三个字段 + 模型参数
         headers = ['trial_counter', 'kappa_mean', 'kappa_std']
-        for k, v in sorted(param_space.items()):
+        for k, v in sorted(self.param_space.items()):
             headers.append(k)
         self.writer.writerow(headers)
         self.log_handler.flush()
 
-        print("************************************************************")
-        print("Search for the best params")
-        # global trial_counter
-        trials = Trials()
-        objective = lambda p: self.hyperopt_wrapper(p, feat_folder, feat_name)
-        best_params = fmin(objective, param_space, algo=tpe.suggest,
-                           trials=trials, max_evals=param_space["max_evals"])
-        # 把best_params包含的数字属性转成int
-        for f in model_conf.int_feat:
-            if best_params.has_key(f):
-                best_params[f] = int(best_params[f])
-        print("************************************************************")
-        print("Best params")
-        for k, v in best_params.items():
-            print "        %s: %s" % (k, v)
-        # 获取尝试的losses
-        trial_kappas = -np.asarray(trials.losses(), dtype=float)
-        best_kappa_mean = max(trial_kappas)
-        # where返回两个维度的坐标
-        ind = np.where(trial_kappas == best_kappa_mean)[0][0]
-        # 找到最优参数的std
-        best_kappa_std = trials.trial_attachments(trials.trials[ind])['std']
-        print("Kappa stats")
-        print("        Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))
-        return best_kappa_mean, best_kappa_std
+
+

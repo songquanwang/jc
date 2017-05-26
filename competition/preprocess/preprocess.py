@@ -16,32 +16,13 @@ __author__
     
 """
 
-import os
 import cPickle
 
 import numpy as np
 import pandas as pd
-from sklearn.cross_validation import StratifiedKFold
 
 from competition.feat.nlp.nlp_utils import clean_text
 import competition.conf.model_params_conf as config
-
-
-def init_path():
-    # create feat folder
-    if not os.path.exists(config.feat_folder):
-        os.makedirs(config.feat_folder)
-
-    #creat folder for the training and testing feat
-    if not os.path.exists("%s/All" % config.feat_folder):
-        os.makedirs("%s/All" % config.feat_folder)
-
-    # creat folder for each run and fold
-    for run in range(1, config.n_runs + 1):
-        for fold in range(1, config.n_folds + 1):
-            path = "%s/Run%d/Fold%d" % (config.feat_folder, run, fold)
-            if not os.path.exists(path):
-                os.makedirs(path)
 
 
 def preprocess():
@@ -120,42 +101,3 @@ def preprocess():
         cPickle.dump(dfTest, f, -1)
     print("Done.")
     """
-
-
-def gen_stratified_kfold():
-    """
-     This file generates the StratifiedKFold indices which will be kept fixed in
-     ALL the following model building parts.
-     分层抽取: 根据median_relevance 也就是 0 1 2 3 各种等级抽取近似；qid 不同的关键字抽取近似
-     [
-         [[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1],[validInd_fold1,trainInd_fold1]],
-         [run2],
-         [run3]
-     ]
-    """
-
-    ## load data
-    with open(config.processed_train_data_path, "rb") as f:
-        dfTrain = cPickle.load(f)
-
-    skf = [0] * config.n_runs
-    for stratified_label, key in zip(["relevance", "query"], ["median_relevance", "qid"]):
-        for run in range(config.n_runs):
-            random_seed = 2015 + 1000 * (run + 1)
-            skf[run] = StratifiedKFold(dfTrain[key], n_folds=config.n_folds,
-                                       shuffle=True, random_state=random_seed)
-            for fold, (validInd, trainInd) in enumerate(skf[run]):
-                print("================================")
-                print("Index for run: %s, fold: %s" % (run + 1, fold + 1))
-                print("Train (num = %s)" % len(trainInd))
-                print(trainInd[:10])
-                print("Valid (num = %s)" % len(validInd))
-                print(validInd[:10])
-        with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, stratified_label), "wb") as f:
-            cPickle.dump(skf, f, -1)
-
-
-if __name__ == "__main__":
-    init_path()
-    preprocess()
-    gen_stratified_kfold()

@@ -9,9 +9,9 @@ from competition.models.base_model import BaseModel
 import competition.conf.model_params_conf as model_param_conf
 
 
-class GbdtModelImp(BaseModel):
-    def __init__(self, param, feat_folder, feat_name):
-        super(BaseModel, self).__init__(param, feat_folder, feat_name)
+class RgfModelImp(BaseModel):
+    def __init__(self, param_space, feat_folder, feat_name):
+        super(RgfModelImp, self).__init__(param_space, feat_folder, feat_name)
 
     def train_predict(self, matrix, all=False):
         """
@@ -59,7 +59,7 @@ class GbdtModelImp(BaseModel):
                 f.write(pars)
             ## train fm
             cmd = "perl %s %s train %s >> rgf.log" % (
-            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+                model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
             # print cmd
             os.system(cmd)
             model_fn = model_fn_prefix + "-01"
@@ -73,7 +73,7 @@ class GbdtModelImp(BaseModel):
             with open(rfg_setting_test + ".inp", "wb") as f:
                 f.write(pars)
             cmd = "perl %s %s predict %s >> rgf.log" % (
-            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_test)
+                model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_test)
             # print cmd
             os.system(cmd)
             pred = np.loadtxt(test_pred_fn, dtype=float)
@@ -110,7 +110,7 @@ class GbdtModelImp(BaseModel):
                 f.write(pars)
             ## train fm
             cmd = "perl %s %s train %s >> rgf.log" % (
-            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
+                model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_train)
             # print cmd
             os.system(cmd)
             model_fn = model_fn_prefix + "-01"
@@ -124,20 +124,17 @@ class GbdtModelImp(BaseModel):
             with open(rfg_setting_valid + ".inp", "wb") as f:
                 f.write(pars)
             cmd = "perl %s %s predict %s >> rgf.log" % (
-            model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_valid)
+                model_param_conf.call_exe, model_param_conf.rgf_exe, rfg_setting_valid)
             # print cmd
             os.system(cmd)
             pred = np.loadtxt(valid_pred_fn, dtype=float)
 
         return pred
 
-    def get_predicts(self):
-        return
-
     @staticmethod
     def get_id():
-        return "gdbt_model_id"
+        return "rgf_model_id"
 
     @staticmethod
     def get_name():
-        return "gdbt_model"
+        return "rgf_model"

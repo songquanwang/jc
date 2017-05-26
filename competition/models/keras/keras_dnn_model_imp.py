@@ -11,9 +11,9 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
 
 
-class GbdtModelImp(BaseModel):
-    def __init__(self, param, feat_folder, feat_name):
-        super(BaseModel, self).__init__(param, feat_folder, feat_name)
+class KerasDnnModelImp(BaseModel):
+    def __init__(self, param_space, feat_folder, feat_name):
+        super(KerasDnnModelImp, self).__init__(param_space, feat_folder, feat_name)
 
     def train_predict(self, matrix, all=False):
         """
@@ -99,13 +99,10 @@ class GbdtModelImp(BaseModel):
 
         return pred
 
-    def get_predicts(self):
-        return
-
     @staticmethod
     def get_id():
-        return "gdbt_model_id"
+        return "keras_dnn_model_id"
 
     @staticmethod
     def get_name():
-        return "gdbt_model"
+        return "keras_dnn_model"

@@ -14,9 +14,9 @@ from sklearn.preprocessing import StandardScaler
 import competition.conf.model_params_conf as model_param_conf
 
 
-class GbdtModelImp(BaseModel):
-    def __init__(self, param, feat_folder, feat_name):
-        super(BaseModel, self).__init__(param, feat_folder, feat_name)
+class LibfmModelImp(BaseModel):
+    def __init__(self, param_space, feat_folder, feat_name):
+        super(LibfmModelImp, self).__init__(param_space, feat_folder, feat_name)
 
     def train_predict(self, matrix, all=False):
         """
@@ -68,13 +68,10 @@ class GbdtModelImp(BaseModel):
 
         return pred
 
-    def get_predicts(self):
-        return
-
     @staticmethod
     def get_id():
-        return "gdbt_model_id"
+        return "libfm_model_id"
 
     @staticmethod
     def get_name():
-        return "gdbt_model"
+        return "libfm_model"

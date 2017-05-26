@@ -25,7 +25,7 @@ __author__
 import numpy as np
 
 from competition.utils.ml_metrics import quadratic_weighted_kappa
-from competition.conf.param_config import config
+import competition.conf.model_params_conf as config
 
 
 ######################
@@ -186,7 +186,7 @@ def softkappaObj(preds, dtrain):
             for l in range(N):
                 indicator = float(n == k)
                 d2E += pow(k - l, 2.0) * hist_label[l] * preds[:, n] * (1 - 2. * preds[:, n]) * (
-                indicator - preds[:, k])
+                    indicator - preds[:, k])
         ## the hess
         hess[:, n] = -M * ((d2O * E - O * d2E) * (E ** 2) - (dO * E - O * dE) * 2. * E * dE) / (E ** 4)
 
@@ -313,7 +313,7 @@ def getTestScore(pred, cutoff):
 
 #### decoding method for four class probabilities (e.g., softmax classification) 没用到
 def getClfScore(preds, cdf):
-    w = np.asarray(np.arange(1, config.n_classes + 1))
+    w = np.asarray(np.arange(1, config.num_of_class + 1))
     preds = preds * w[np.newaxis, :]
     preds = np.sum(preds, axis=1)
     output = getScore(preds, cdf)
@@ -325,12 +325,12 @@ def getClfScore(preds, cdf):
 def applyEBCRule(preds, hard_threshold=False):
     if len(preds.shape) == 1:
         ## get prediction
-        numOfSample = len(preds) / (config.n_classes - 1)
+        numOfSample = len(preds) / (config.num_of_class - 1)
         if hard_threshold:
             r = np.ones((numOfSample), dtype=int)
         else:
             r = np.ones((numOfSample), dtype=float)
-        for c in range(config.n_classes - 1):
+        for c in range(config.num_of_class - 1):
             if hard_threshold:
                 r += np.asarray(preds[c * numOfSample:(c + 1) * numOfSample] > 0, dtype=int)
             else:
@@ -426,29 +426,60 @@ def evalerror_cocr_cdf(preds, dtrain, cdf):
     return 'kappa', float(kappa)
 
 
-def bootstrap_all(bootstrap_replacement, run, fold, numTrain, bootstrap_ratio):
-    rng = np.random.RandomState(2015 + 1000 * run + 10 * fold)
+def bootstrap_all(bootstrap_replacement, numTrain, bootstrap_ratio):
+    """
+    对全部训练数据进行自举法抽样
+    :param bootstrap_replacement:
+    :param run:
+    :param fold:
+    :param numTrain:
+    :param bootstrap_ratio:
+    :return:
+    """
+    seed = 2015 + 1000 * 3 + 10 * 3
+    return bootstrap_data(seed, bootstrap_replacement, numTrain, bootstrap_ratio)
+
+
+def bootstrap_run_fold(bootstrap_replacement, run, fold, numTrain, bootstrap_ratio):
+    """
+    对交叉验证数据进行自举法抽样
+    :param bootstrap_replacement:
+    :param numTrain:
+    :param bootstrap_ratio:
+    :return:
+    """
+    seed = 2015 + 1000 * run + 10 * fold
+    return bootstrap_data(seed, bootstrap_replacement, numTrain, bootstrap_ratio)
+
+
+def bootstrap_data(seed, bootstrap_replacement, numTrain, bootstrap_ratio):
+    """
+    使用指定的种子；从训练数据中抽取一定比例的数据，返回数据索引
+    :param seed:
+    :param bootstrap_replacement: 放回的抽样；不放回的抽样
+    :param numTrain:
+    :param bootstrap_ratio:
+    :return:返回抽样索引，没抽中的索引
+    """
+    rng = np.random.RandomState(seed)
     if bootstrap_replacement:
         sampleSize = int(numTrain * bootstrap_ratio)
-        # numTrain -- sampleSize 个随机数字数组array
+        # 每个元素在 [0-numTrain)之间 ，共 sampleSize个这样的随机数字组成的数组array
         index_base = rng.randint(numTrain, size=sampleSize)
+        # 没有抽到的元素
         index_meta = [i for i in range(numTrain) if i not in index_base]
     else:
+        # 不重复抽样
         randnum = rng.uniform(size=numTrain)
         index_base = [i for i in range(numTrain) if randnum[i] < bootstrap_ratio]
         index_meta = [i for i in range(numTrain) if randnum[i] >= bootstrap_ratio]
-        # 如果 xgboost 则初始化 dvalid_base dtrain_base
     return index_base, index_meta
 
 
-def bootstrap_run_fold(bootstrap_replacement, numTrain, bootstrap_ratio):
-    rng = np.random.RandomState(2015 + 1000 * 3 + 10 * 3)
-    if bootstrap_replacement:
-        sampleSize = int(numTrain * bootstrap_ratio)
-        index_base = rng.randint(numTrain, size=sampleSize)
-        index_meta = [i for i in range(numTrain) if i not in index_base]
-    else:
-        randnum = rng.uniform(size=numTrain)
-        index_base = [i for i in range(numTrain) if randnum[i] < bootstrap_ratio]
-        index_meta = [i for i in range(numTrain) if randnum[i] >= bootstrap_ratio]
-    return index_base, index_meta
+def try_divide(x, y, val=0.0):
+    """
+        Try to divide two numbers
+    """
+    if y != 0.0:
+        val = float(x) / y
+    return val

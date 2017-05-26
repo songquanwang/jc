@@ -18,9 +18,9 @@ from sklearn.svm import SVR
 import competition.conf.model_params_conf as model_param_conf
 
 
-class GbdtModelImp(BaseModel):
-    def __init__(self, param, feat_folder, feat_name):
-        super(BaseModel, self).__init__(param, feat_folder, feat_name)
+class SklModelImp(BaseModel):
+    def __init__(self, param_space, feat_folder, feat_name):
+        super(SklModelImp, self).__init__(param_space, feat_folder, feat_name)
 
     def train_predict(self, set_obj, all=False):
         """
@@ -165,8 +165,8 @@ class GbdtModelImp(BaseModel):
 
     @staticmethod
     def get_id():
-        return "gdbt_model_id"
+        return "skl_model_id"
 
     @staticmethod
     def get_name():
-        return "gdbt_model"
+        return "skl_model"

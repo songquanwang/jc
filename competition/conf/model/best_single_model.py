@@ -14,8 +14,6 @@ __author__
 
 """
 
-import os
-
 feat_names = [
     ## svd100_and_bow_Jun27 (High)
     "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_xgb_linear]",
@@ -25,7 +23,3 @@ feat_names = [
     # "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@kappa_xgb_linear]",
     # "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_ridge]",
 ]
-
-for feat_name in feat_names:
-    cmd = "python ./train_model.py %s" % feat_name
-    os.system(cmd)

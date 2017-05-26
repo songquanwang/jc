@@ -344,7 +344,7 @@ int_feat = ["num_round", "n_estimators", "max_depth", "degree",
 ####################
 feat_folders = []
 feat_names = []
-param_spaces = {}
+param_spaces = []
 
 
 #####################################
@@ -358,28 +358,28 @@ feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_xgb_tree]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_tree
+param_spaces.append(param_space_reg_xgb_tree)
 
 ## regression with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_linear
+param_spaces.append(param_space_reg_xgb_linear)
 
 ## cocr with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@cocr_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_cocr_xgb_linear
+param_spaces.append(param_space_cocr_xgb_linear)
 
 ## softkappa with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@kappa_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_kappa_xgb_linear
+param_spaces.append(param_space_kappa_xgb_linear)
 
 #############
 ## Sklearn ##
@@ -389,49 +389,49 @@ feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_etr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_etr
+param_spaces.append(param_space_reg_skl_etr)
 
 ## random forest regressor
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_rf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_rf
+param_spaces.append(param_space_reg_skl_rf)
 
 ## gradient boosting regressor
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_gbm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_gbm
+param_spaces.append(param_space_reg_skl_gbm)
 
 ## support vector regression
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_svr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_svr
+param_spaces.append(param_space_reg_skl_svr)
 
 ## ridge regression
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_ridge]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_ridge
+param_spaces.append(param_space_reg_skl_ridge)
 
 ## lasso
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_skl_lasso]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_lasso
+param_spaces.append(param_space_reg_skl_lasso)
 
 ## logistic regression
 feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@clf_skl_lr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_clf_skl_lr
+param_spaces.append(param_space_clf_skl_lr)
 
 ###########################
 ## Factorization Machine ##
@@ -440,7 +440,7 @@ feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_libfm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_libfm
+param_spaces.append(param_space_reg_libfm)
 
 ###########
 ## Keras ##
@@ -449,7 +449,7 @@ feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_keras_dnn]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_keras_dnn
+param_spaces.append(param_space_reg_keras_dnn)
 
 ###############################
 ## Regularized Greedy Forest ##
@@ -458,7 +458,7 @@ feat_folder = "../../Feat/solution/LSA_and_stats_feat_Jun09"
 feat_name = "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_rgf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_rgf
+param_spaces.append(param_space_reg_rgf)
 
 
 #####################################
@@ -472,28 +472,28 @@ feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_xgb_tree]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_tree
+param_spaces.append(param_space_reg_xgb_tree)
 
 ## regression with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_linear
+param_spaces.append(param_space_reg_xgb_linear)
 
 ## cocr with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@cocr_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_cocr_xgb_linear
+param_spaces.append(param_space_cocr_xgb_linear)
 
 ## softkappa with xgboost linear booster
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@kappa_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_kappa_xgb_linear
+param_spaces.append(param_space_kappa_xgb_linear)
 
 #############
 ## Sklearn ##
@@ -503,49 +503,49 @@ feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_etr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_etr
+param_spaces.append(param_space_reg_skl_etr)
 
 ## random forest regressor
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_rf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_rf
+param_spaces.append(param_space_reg_skl_rf)
 
 ## gradient boosting regressor
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_gbm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_gbm
+param_spaces.append(param_space_reg_skl_gbm)
 
 ## support vector regression
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_svr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_svr
+param_spaces.append(param_space_reg_skl_svr)
 
 ## ridge regression
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_ridge]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_ridge
+param_spaces.append(param_space_reg_skl_ridge)
 
 ## lasso
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_skl_lasso]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_lasso
+param_spaces.append(param_space_reg_skl_lasso)
 
 ## logistic regression
 feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@clf_skl_lr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_clf_skl_lr
+param_spaces.append(param_space_clf_skl_lr)
 
 ###########################
 ## Factorization Machine ##
@@ -554,7 +554,7 @@ feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_libfm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_libfm
+param_spaces.append(param_space_reg_libfm)
 
 ###########
 ## Keras ##
@@ -563,7 +563,7 @@ feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_keras_dnn]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_keras_dnn
+param_spaces.append(param_space_reg_keras_dnn)
 
 ###############################
 ## Regularized Greedy Forest ##
@@ -572,7 +572,7 @@ feat_folder = "../../Feat/solution/LSA_svd150_and_Jaccard_coef_Jun14"
 feat_name = "[Pre@solution]_[Feat@LSA_svd150_and_Jaccard_coef_Jun14]_[Model@reg_rgf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_rgf
+param_spaces.append(param_space_reg_rgf)
 
 
 #####################################
@@ -586,28 +586,28 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_xgb_tree]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_tree
+param_spaces.append(param_space_reg_xgb_tree)
 
 ## regression with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_linear
+param_spaces.append(param_space_reg_xgb_linear)
 
 ## cocr with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@cocr_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_cocr_xgb_linear
+param_spaces.append(param_space_cocr_xgb_linear)
 
 ## softkappa with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@kappa_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_kappa_xgb_linear
+param_spaces.append(param_space_kappa_xgb_linear)
 
 #############
 ## Sklearn ##
@@ -617,49 +617,49 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_etr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_etr
+param_spaces.append(param_space_reg_skl_etr)
 
 ## random forest regressor
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_rf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_rf
+param_spaces.append(param_space_reg_skl_rf)
 
 ## gradient boosting regressor
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_gbm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_gbm
+param_spaces.append(param_space_reg_skl_gbm)
 
 ## support vector regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_svr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_svr
+param_spaces.append(param_space_reg_skl_svr)
 
 ## ridge regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_ridge]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_ridge
+param_spaces.append(param_space_reg_skl_ridge)
 
 ## lasso
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_skl_lasso]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_lasso
+param_spaces.append(param_space_reg_skl_lasso)
 
 ## logistic regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@clf_skl_lr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_clf_skl_lr
+param_spaces.append(param_space_clf_skl_lr)
 
 ###########################
 ## Factorization Machine ##
@@ -668,7 +668,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_libfm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_libfm
+param_spaces.append(param_space_reg_libfm)
 
 ###########
 ## Keras ##
@@ -677,7 +677,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_keras_dnn]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_keras_dnn
+param_spaces.append(param_space_reg_keras_dnn)
 
 ###############################
 ## Regularized Greedy Forest ##
@@ -686,7 +686,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun23"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun23]_[Model@reg_rgf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_rgf
+param_spaces.append(param_space_reg_rgf)
 
 
 #################################
@@ -700,28 +700,28 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_xgb_tree]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_tree
+param_spaces.append(param_space_reg_xgb_tree)
 
 ## regression with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_xgb_linear
+param_spaces.append(param_space_reg_xgb_linear)
 
 ## cocr with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@cocr_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_cocr_xgb_linear
+param_spaces.append(param_space_cocr_xgb_linear)
 
 ## softkappa with xgboost linear booster
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@kappa_xgb_linear]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_kappa_xgb_linear
+param_spaces.append(param_space_kappa_xgb_linear)
 
 #############
 ## Sklearn ##
@@ -731,49 +731,49 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_etr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_etr
+param_spaces.append(param_space_reg_skl_etr)
 
 ## random forest regressor
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_rf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_rf
+param_spaces.append(param_space_reg_skl_rf)
 
 ## gradient boosting regressor
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_gbm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_gbm
+param_spaces.append(param_space_reg_skl_gbm)
 
 ## support vector regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_svr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_svr
+param_spaces.append(param_space_reg_skl_svr)
 
 ## ridge regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_ridge]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_ridge
+param_spaces.append(param_space_reg_skl_ridge)
 
 ## lasso
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_skl_lasso]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_skl_lasso
+param_spaces.append(param_space_reg_skl_lasso)
 
 ## logistic regression
 feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@clf_skl_lr]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_clf_skl_lr
+param_spaces.append(param_space_clf_skl_lr)
 
 ###########################
 ## Factorization Machine ##
@@ -782,7 +782,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_libfm]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_libfm
+param_spaces.append(param_space_reg_libfm)
 
 ###########
 ## Keras ##
@@ -791,7 +791,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_keras_dnn]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_keras_dnn
+param_spaces.append(param_space_reg_keras_dnn)
 
 ###############################
 ## Regularized Greedy Forest ##
@@ -800,4 +800,7 @@ feat_folder = "../../Feat/solution/svd100_and_bow_Jun27"
 feat_name = "[Pre@solution]_[Feat@svd100_and_bow_Jun27]_[Model@reg_rgf]"
 feat_folders.append(feat_folder)
 feat_names.append(feat_name)
-param_spaces[feat_name] = param_space_reg_rgf
+param_spaces.append(param_space_reg_rgf)
+
+# 生成模型配置对象 {feat_name,(folder,param_spaces)}
+model_config = dict(zip(feat_name, zip(feat_folder, param_spaces)))
