@@ -51,7 +51,7 @@ import abc
 from  competition.feat.base_feat import BaseFeat
 
 
-class BasicTfidfModel(BaseFeat):
+class BasicTfidfFeat(BaseFeat):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, stats_feat_flag=True):

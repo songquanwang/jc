@@ -14,9 +14,11 @@ __author__
 
 """
 
-import os
+import cPickle
 
 from sklearn.cross_validation import StratifiedKFold
+
+import competition.conf.model_params_conf as config
 
 
 def gen_stratified_kfold():
