@@ -6,10 +6,10 @@ from competition.preprocess.kfold import gen_stratified_kfold
 from competition.info.gen_info import gen_info
 import competition.models.model_manager as model_manager
 
-import competition.feat.conf.LSA_and_stats_feat_Jun09_Low as LSA_and_stats_feat_Jun09_Low
-import competition.feat.conf.LSA_svd150_and_Jaccard_coef_Jun14_Low as LSA_svd150_and_Jaccard_coef_Jun14_Low
-import competition.feat.conf.svd100_and_bow_Jun23_Low as svd100_and_bow_Jun23_Low
-import competition.feat.conf.svd100_and_bow_Jun27_High as svd100_and_bow_Jun27_High
+import competition.conf.feat.LSA_and_stats_feat_Jun09_Low as LSA_and_stats_feat_Jun09_Low
+import competition.conf.feat.LSA_svd150_and_Jaccard_coef_Jun14_Low as LSA_svd150_and_Jaccard_coef_Jun14_Low
+import competition.conf.feat.svd100_and_bow_Jun23_Low as svd100_and_bow_Jun23_Low
+import competition.conf.feat.svd100_and_bow_Jun27_High as svd100_and_bow_Jun27_High
 
 from competition.feat.base_feat import BaseFeat
 from competition.feat.basic_tfidf_feat import BasicTfidfFeat
@@ -18,6 +18,8 @@ from competition.feat.counting_feat import CountingFeat
 from competition.feat.distance_feat import DistanceFeat
 from competition.feat.id_feat import IdFeat
 import competition.conf.feat_params_conf as feat_param_conf
+from competition.ensemble.ensemble_selection import gen_ensemble
+import competition.conf.model_library_config as model_library_config
 
 
 def preprocess():
@@ -66,10 +68,11 @@ def gen_feat():
     id_feat = IdFeat()
     id_feat.gen_id_feat()
 
-    # 合并所有的feat
+    # 合并所有的feat 生成四个目录，文件名字 train.feat valid.feat test.feat
     BaseFeat.combine_feat(LSA_and_stats_feat_Jun09_Low.feat_names, feat_path_name="LSA_and_stats_feat_Jun09")
 
-    BaseFeat.combine_feat(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
+    BaseFeat.combine_feat(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names,
+                          feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
 
     BaseFeat.combine_feat(svd100_and_bow_Jun23_Low.feat_names, feat_path_name="svd100_and_bow_Jun23")
 
@@ -87,4 +90,8 @@ def predict(specified_models):
 
 
 def ensemble():
-    return
+    """
+    "../../Feat/solution/LSA_and_stats_feat_Jun09"
+    :return:
+    """
+    gen_ensemble(model_library_config.feat_folders[0])

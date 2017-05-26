@@ -21,7 +21,9 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 from competition.utils.utils import getScore, getTestScore
 from competition.utils.ml_metrics import quadratic_weighted_kappa
-import competition.conf.model_library_config as config
+import competition.conf.model_params_conf as config
+import competition.conf.model_library_config as model_library_config
+import competition.utils.utils as utils
 
 
 def ensembleSelectionPrediction(model_folder, best_bagged_model_list, best_bagged_model_weight, cdf, cutoff=None):
@@ -293,6 +295,24 @@ def gen_kappa_cv(bagging_iter, Y_list_valid, cdf_list_valid, numValidMatrix, p_e
 
 def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10, init_top_k=5,
                       prunning_fraction=0.2):
+    """
+
+    :param feat_folder:
+    :param model_folder:
+    :param model_list:
+    :param cdf:
+    :param cdf_test:
+    :param subm_prefix:
+    :param hypteropt_max_evals:
+    :param w_min:
+    :param w_max:
+    :param bagging_replacement:
+    :param bagging_fraction:
+    :param bagging_size:
+    :param init_top_k:
+    :param prunning_fraction:
+    :return:
+    """
     ## load all the prediction :maxNumValid 预测结果假定是12000行
     maxNumValid = 12000
     # 模型-run-fold-行
@@ -334,15 +354,7 @@ def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm
     num_model = len(model_list)
     # print bagging_size
     for bagging_iter in range(bagging_size):
-        rng = np.random.RandomState(2015 + 100 * bagging_iter)
-        if bagging_replacement:
-            # 随机抽取
-            sampleSize = int(num_model * bagging_fraction)
-            index_base = rng.randint(num_model, size=sampleSize)
-        else:
-            # 均匀分布
-            randnum = rng.uniform(size=num_model)
-            index_base = [i for i in range(num_model) if randnum[i] < bagging_fraction]
+        index_base, index_meta =utils.bootstrap_data(2015 + 100 * bagging_iter, bagging_replacement, num_model, bagging_fraction)
         this_sorted_models = [sorted_models[i] for i in sorted(index_base)]
 
         # print this_model_list
@@ -375,21 +387,25 @@ def ensembleSelection(feat_folder, model_folder, model_list, cdf, cdf_test, subm
         output.to_csv(sub_file, index=False)
     return best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight
 
-if __name__ == "__main__":
-    ##
-    ## config
+
+def gen_ensemble(feat_folder):
+    """
+
+    :param feat_folder: '../../Feat/solution/LSA_and_stats_feat_Jun09'
+    :return:
+    """
+
+    # 输出路径
     model_folder = "../../Output"
     subm_folder = "../../Output/Subm"
     if not os.path.exists(subm_folder):
         os.makedirs(subm_folder)
 
-
-    ## load test info
-    feat_folder = config.feat_folders[0]
+    # 第一个特征
     info_test = pd.read_csv("%s/All/test.info" % feat_folder)
     id_test = info_test["id"]
     numTest = info_test.shape[0]
-    ## load cdf
+    # load cdf
     cdf_test = np.loadtxt("%s/All/test.cdf" % feat_folder, dtype=float)
 
     # pdf_test = [0.089, 0.112, 0.19, 0.609]
@@ -397,13 +413,12 @@ if __name__ == "__main__":
     # cdf_valid = cdf_test
     cdf_valid = None
 
-
     ## reg
     model_list = []
     # try 5/10/50
-    id_sizes = 10 * np.ones(len(config.feat_names), dtype=int)
-    for feat_name, id_size in zip(config.feat_names, id_sizes):
-        ## get the top 10 model ids
+    id_sizes = 10 * np.ones(len(model_library_config.feat_names), dtype=int)
+    for feat_name, id_size in zip(model_library_config.feat_names, id_sizes):
+        # 获取每个算法的前十个模型；根据kappa_mean排序
         log_file = "%s/Log/%s_hyperopt.log" % (model_folder, feat_name)
         try:
             # 读取模型平均参数
@@ -420,10 +435,10 @@ if __name__ == "__main__":
 
     bagging_size = 100
     bagging_fraction = 1.0
+    # 剪枝参数没有用到
     prunning_fraction = 1.
     bagging_replacement = True
     init_top_k = 5
-
     subm_prefix = "%s/test.pred.[ensemble_selection]_[Solution]" % (subm_folder)
     best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = ensembleSelection(feat_folder, model_folder, model_list, cdf=cdf_valid, cdf_test=cdf_test, subm_prefix=subm_prefix, \
                           hypteropt_max_evals=1, w_min=-1, w_max=1, bagging_replacement=bagging_replacement,
