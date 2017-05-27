@@ -1,4 +1,12 @@
 # coding:utf-8
+"""
+整体流程
+1.预处理
+2.生成特征；合并特征
+3.生成统计信息文件
+4.模型训练、预测结果保存
+5.集成训练结果
+"""
 __author__ = 'songquanwang'
 from competition.preprocess.preprocess import preprocess
 from competition.preprocess.init_path import init_path
@@ -35,20 +43,6 @@ def preprocess():
     gen_stratified_kfold()
 
 
-def gen_info():
-    """
-    创建info文件
-    :return:
-    """
-    gen_info(feat_path_name="LSA_and_stats_feat_Jun09")
-
-    gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun23")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun27")
-
-
 def gen_feat():
     # 生成所有的特征+label
     stats_feat_flag = feat_param_conf.stats_feat_flag
@@ -71,12 +65,25 @@ def gen_feat():
     # 合并所有的feat 生成四个目录，文件名字 train.feat valid.feat test.feat
     BaseFeat.combine_feat(LSA_and_stats_feat_Jun09_Low.feat_names, feat_path_name="LSA_and_stats_feat_Jun09")
 
-    BaseFeat.combine_feat(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names,
-                          feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
+    BaseFeat.combine_feat(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
 
     BaseFeat.combine_feat(svd100_and_bow_Jun23_Low.feat_names, feat_path_name="svd100_and_bow_Jun23")
 
     BaseFeat.combine_feat(svd100_and_bow_Jun27_High.feat_names, feat_path_name="svd100_and_bow_Jun27")
+
+
+def gen_info():
+    """
+    创建info文件
+    :return:
+    """
+    gen_info(feat_path_name="LSA_and_stats_feat_Jun09")
+
+    gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
+
+    gen_info(feat_path_name="svd100_and_bow_Jun23")
+
+    gen_info(feat_path_name="svd100_and_bow_Jun27")
 
 
 def predict(specified_models):
@@ -94,7 +101,7 @@ def ensemble():
     "../../Feat/solution/LSA_and_stats_feat_Jun09"
     :return:
     """
-    predict_ensemble =PredictEnsemble()
-    feat_folder =model_library_config.feat_folders[0]
-    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight =predict_ensemble.gen_ensemble(feat_folder)
+    predict_ensemble = PredictEnsemble()
+    feat_folder = model_library_config.feat_folders[0]
+    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = predict_ensemble.gen_ensemble(feat_folder)
     print("best_kappa_mean: %.6f\n best_kappa_std: %.6f\n  best_bagged_model_list: %r \n best_bagged_model_weight: %r \n " % (best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight))

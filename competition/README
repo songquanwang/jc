@@ -4,7 +4,7 @@
     样本权重是通过下面方式应用到算法中：
     matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=matrix.weight_train[index_base])
 
-2.自举发抽样
+2.自举法抽样
   放回抽样：rng.randint(numTrain, size=sampleSize)
   非放回抽样：randnum = rng.uniform(size=numTrain)
 
