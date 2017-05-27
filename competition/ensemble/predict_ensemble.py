@@ -123,14 +123,15 @@ class PredictEnsemble(object):
 
     def gen_kappa_list(self, feat_folder, cdf):
         """
-
+        初始化实例变量,供后续方法使用：
+         num_valid_matrix
+         y_list_valid
+         cdf_list_valid
+         kappa_cv
+         pred_list_valid
+         kappa_list
         :param feat_folder:
         :param cdf:
-        :param numValidMatrix:  引用 可用临时变量替代，因为返回的是最后一个model的值
-        :param pred_list_valid: 引用
-        :param Y_list_valid: 引用   可用临时变量替代,因为返回的是最后一个model的值
-        :param cdf_list_valid: 引用 可用临时变量替代, 因为返回的是最后一个model的值
-        :param kappa_list: 引用
         :return:
         """
         print("Load model...")
@@ -163,19 +164,20 @@ class PredictEnsemble(object):
 
     def gen_ens_topk(self, init_top_k, this_sorted_models):
         """
-          选择前五个模型 返回整合后的预测值；前五个模型名字；前五个模型的权重(全是1)
+        选择前五个模型 返回整合后的预测值；前五个模型名字；前五个模型的权重(全是1,相当于取平均值)
+        读取实例变量：
+        pred_list_valid
+        num_valid_matrix
+        model2idx
+        cdf_list_valid
+        y_list_valid
         :param init_top_k:
         :param this_sorted_models:
-        :param model2idx:
-        :param pred_list_valid:
-        :param numValidMatrix:
-        :param cdf_list_valid:
-        :param Y_list_valid:
-        :return:
+        :return:best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens
         """
         best_model_list = []
         best_model_weight = []
-        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, self.numValidMatrix), dtype=float)
+        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, self.num_valid_matrix), dtype=float)
         w_ens, this_w = 0, 1.0
         cnt = 0
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
@@ -193,7 +195,7 @@ class PredictEnsemble(object):
                     # 在最后一个model，生成一些指标
                     if cnt == init_top_k - 1:
                         cdf = self.cdf_list_valid[run, fold, :]
-                        true_label = self.Y_list_valid[run, fold, :num_valid]
+                        true_label = self.y_list_valid[run, fold, :num_valid]
                         score = getScore(p_ens_list_valid_topk[run, fold, :num_valid], cdf)
                         kappa_cv[run][fold] = quadratic_weighted_kappa(score, true_label)
             best_model_list.append(model)
@@ -206,7 +208,7 @@ class PredictEnsemble(object):
     def ensemble_selection_obj(self, param, p1_list, weight1, p2_list):
 
         """
-        优化param中的weight_current_model参数，使其平均kappa_cv_mean
+        优化param中的weight_current_model参数，使其平均kappa_cv_mean 最大
         :param param:
         :param p1_list: 集成前五个模型(也就是对前五个模型求平均值的结果)
         :param weight1: 1
@@ -407,7 +409,7 @@ class PredictEnsemble(object):
             output.to_csv(sub_file, index=False)
         return best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight
 
-    def gen_ensemble(self,feat_folder):
+    def gen_ensemble(self, feat_folder):
         """
 
         :param feat_folder: '../../Feat/solution/LSA_and_stats_feat_Jun09'
@@ -422,7 +424,8 @@ class PredictEnsemble(object):
         bagging_replacement = True
         init_top_k = 5
         subm_prefix = "%s/test.pred.[ensemble_selection]_[Solution]" % (self.subm_folder)
-        best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = self.ensemble_selection(feat_folder, self.model_folder, self.model_list, cdf=cdf_valid, cdf_test=cdf_test, subm_prefix=subm_prefix, \
+        best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = self.ensemble_selection(feat_folder, self.model_folder, self.model_list, cdf=cdf_valid, cdf_test=cdf_test,
+                                                                                                                    subm_prefix=subm_prefix, \
                                                                                                                     hypteropt_max_evals=1, w_min=-1, w_max=1, bagging_replacement=bagging_replacement,
                                                                                                                     bagging_fraction=bagging_fraction, \
                                                                                                                     bagging_size=bagging_size, init_top_k=init_top_k, prunning_fraction=prunning_fraction)
