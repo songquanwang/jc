@@ -18,7 +18,7 @@ __author__
 """
 
 import competition.conf.model_params_conf as config
-from competition.feat.combine_feat import SimpleTransform
+from competition.utils.simple_transform import SimpleTransform
 
 feat_names = [
 

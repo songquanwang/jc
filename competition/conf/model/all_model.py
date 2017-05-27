@@ -14,8 +14,6 @@ __author__
 
 """
 
-import os
-
 feat_names_all = [
     ## LSA_and_stats_feat_Jun09 (Low)
     "[Pre@solution]_[Feat@LSA_and_stats_feat_Jun09]_[Model@reg_xgb_tree]",
