@@ -2,7 +2,7 @@
 """
 __file__
 
-    ensemble_selection.py
+    predict_ensemble.py
 
 __description__
 
@@ -317,7 +317,7 @@ class PredictEnsemble(object):
 
     def gen_kappa_cv(self, bagging_iter, p_ens_list_valid, p_ens_list_valid_topk):
         """
-        
+
         :param bagging_iter:
         :param p_ens_list_valid:
         :param p_ens_list_valid_topk:

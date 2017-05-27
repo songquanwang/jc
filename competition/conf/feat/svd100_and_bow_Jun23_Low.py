@@ -2,7 +2,7 @@
 """
 __file__
     
-    combine_feat_[svd100_and_bow_Jun23]_[Low].py
+    svd100_and_bow_Jun23_Low.py
 
 __description__
 
@@ -10,7 +10,7 @@ __description__
 
 __author__
 
-    Chenglong Chen < c.chenglong@gmail.com >
+    songquanwang
 
 """
 

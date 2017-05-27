@@ -10,22 +10,19 @@ __description__
 
 __author__
 
-    Chenglong Chen < c.chenglong@gmail.com >
+    songquanwang
 
 """
 
 import re
-import sys
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-
 import nltk
 from bs4 import BeautifulSoup
 from nltk import pos_tag
-from competition.feat.nlp.replacer import CsvWordReplacer
 
-sys.path.append("../")
-from code_new.param_config import config
+from competition.feat.nlp.replacer import CsvWordReplacer
+import competition.conf.model_params_conf as config
 
 ################
 ## Stop Words ##
@@ -225,11 +222,11 @@ def drop_html(html):
     return BeautifulSoup(html).get_text(separator=" ")
 
 
-
-
 # (?u)就是启用Unicode dependent特性；用户匹配带汉字的文本
 # java 正则表达式例如: \w ，在字符串中被当成转移字符，所以加上\\w;python中r（raw string）可以把字符串当成普通字符处理
 token_pattern = r"(?u)\b\w\w+\b"
+
+
 # token_pattern = r'\w{1,}'
 # token_pattern = r"\w+"
 # token_pattern = r"[\w']+"

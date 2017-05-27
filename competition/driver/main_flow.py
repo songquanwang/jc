@@ -20,7 +20,7 @@ from competition.feat.id_feat import IdFeat
 import competition.conf.feat_params_conf as feat_param_conf
 from competition.ensemble.predict_ensemble import PredictEnsemble
 import competition.conf.model_library_config as model_library_config
-import numpy as np
+
 
 def preprocess():
     """

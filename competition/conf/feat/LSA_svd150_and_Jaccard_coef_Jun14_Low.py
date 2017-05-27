@@ -2,7 +2,7 @@
 """
 __file__
     
-    combine_feat_[LSA_svd150_and_Jaccard_coef_Jun14]_[Low].py
+    LSA_svd150_and_Jaccard_coef_Jun14_Low.py
 
 __description__
 
@@ -10,7 +10,7 @@ __description__
 
 __author__
 
-    Chenglong Chen < c.chenglong@gmail.com >
+    songquanwang
 
 """
 

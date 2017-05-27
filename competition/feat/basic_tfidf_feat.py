@@ -2,7 +2,7 @@
 """
 __file__
 
-    genFeat_basic_tfidf_feat.py
+    basic_tfidf_feat.py
 
 __description__
 
@@ -31,7 +31,7 @@ __description__
 
 __author__
 
-    Chenglong Chen < c.chenglong@gmail.com >
+    songquanwang
 
 """
 
@@ -210,7 +210,7 @@ class BasicTfidfFeat(BaseFeat):
                         target_vec = cPickle.load(f)
                     with open("%s/%s.%s.feat.pkl" % (path, mod, feat_names[j]), "rb") as f:
                         obs_vec = cPickle.load(f)
-                    sim = np.asarray(map(BasicTfidfModel.cosine_sim, target_vec, obs_vec))[:, np.newaxis]
+                    sim = np.asarray(map(BasicTfidfFeat.cosine_sim, target_vec, obs_vec))[:, np.newaxis]
                     # 计算两个特征之间的余弦相似度
                     with open("%s/%s.%s_%s_%s_cosine_sim.feat.pkl" % (path, mod, feat_names[i], feat_names[j], vec_type),
                               "wb") as f:
@@ -280,7 +280,7 @@ class BasicTfidfFeat(BaseFeat):
                     target_vec = cPickle.load(f)
                 with open("%s/%s.%s_common_svd%d.feat.pkl" % (path, mod, feat_names[j], n_components), "rb") as f:
                     obs_vec = cPickle.load(f)
-                sim = np.asarray(map(BasicTfidfModel.cosine_sim, target_vec, obs_vec))[:, np.newaxis]
+                sim = np.asarray(map(BasicTfidfFeat.cosine_sim, target_vec, obs_vec))[:, np.newaxis]
                 ## dump feat
                 with open("%s/%s.%s_%s_%s_common_svd%d_cosine_sim.feat.pkl" % (path, mod, feat_names[i], feat_names[j], vec_type, n_components), "wb") as f:
                     cPickle.dump(sim, f, -1)
@@ -383,7 +383,7 @@ class BasicTfidfFeat(BaseFeat):
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
-            if stats_feat_flag:
+            if self.stats_feat_flag:
                 feat_list = self.extract_bow_tfidf_cosine_sim_stats_feat(path, dfTrain, dfTest, feat_name, column_name, X_train, X_test, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict)
                 new_feat_names.extend(feat_list)
         return new_feat_names
@@ -417,7 +417,7 @@ class BasicTfidfFeat(BaseFeat):
             ## update feat names
             new_feat_names.append("%s_common_svd%d" % (feat_name, n_components))
 
-            if stats_feat_flag:
+            if self.stats_feat_flag:
                 #####################################
                 ## bow/tfidf-svd cosine sim stats feat ##
                 #####################################
@@ -451,7 +451,7 @@ class BasicTfidfFeat(BaseFeat):
             ## update feat names
             new_feat_names.append("%s_individual_svd%d" % (feat_name, n_components))
 
-            if stats_feat_flag:
+            if self.stats_feat_flag:
                 #########################################
                 ## bow/tfidf-svd cosine sim stats feat ##
                 #########################################
@@ -478,7 +478,7 @@ class BasicTfidfFeat(BaseFeat):
         new_feat_names = copy(feat_names)
         # 找出所有的词汇
         vocabulary = self.create_vocabulary(vocabulary_type, vec_type)
-        if stats_feat_flag:
+        if self.stats_feat_flag:
             # 返回 类别为键，序号数组为值的字典
             relevance_indices_dict = self.get_sample_indices_by_relevance(dfTrain)
             # 返回 类别-qid为键，序号数组为值的字典

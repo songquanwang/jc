@@ -2,7 +2,7 @@
 """
 __file__
 
-	generate_best_single_model.py
+	best_single_model.py
 
 __description__
 
@@ -10,7 +10,7 @@ __description__
 
 __author__
 
-	Chenglong Chen < c.chenglong@gmail.com >
+	songquanwang
 
 """
 

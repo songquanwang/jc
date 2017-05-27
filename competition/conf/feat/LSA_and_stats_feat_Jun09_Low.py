@@ -2,7 +2,7 @@
 """
 __file__
     
-    combine_feat_[LSA_and_stats_feat_Jun09]_[Low].py
+    LSA_and_stats_feat_Jun09_Low.py
 
 __description__
 
@@ -10,7 +10,7 @@ __description__
 
 __author__
 
-    Chenglong Chen < c.chenglong@gmail.com >
+    songquanwang
 
 """
 
