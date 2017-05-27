@@ -42,3 +42,5 @@ stemmer_type = "porter"  # "snowball"
 
 # transform for count features
 count_feat_transform = np.sqrt
+#try 10/50/100
+ensemble_model_top__k =10

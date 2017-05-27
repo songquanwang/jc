@@ -50,7 +50,7 @@ class PredictEnsemble(object):
         # run-fold-行
         self.p_ens_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
 
-        id_sizes = 10 * np.ones(len(model_library_config.feat_names), dtype=int)
+        id_sizes = config.ensemble_model_top__k * np.ones(len(model_library_config.feat_names), dtype=int)
         for feat_name, id_size in zip(model_library_config.feat_names, id_sizes):
             # 获取每个算法的前十个模型；根据kappa_mean排序
             log_file = "%s/Log/%s_hyperopt.log" % (self.model_folder, feat_name)
@@ -392,7 +392,7 @@ class PredictEnsemble(object):
             #### ensemble selection with replacement
             self.gen_best_weight(this_sorted_models, w_min, w_max, hypteropt_max_evals, w_ens, p_ens_list_valid_topk, best_model_list, best_model_weight)
 
-            kappa_cv, cutoff = self.gen_kappa_cv(self, bagging_iter, self.p_ens_list_valid, p_ens_list_valid_topk)
+            kappa_cv, cutoff = self.gen_kappa_cv(bagging_iter, self.p_ens_list_valid, p_ens_list_valid_topk)
 
             best_kappa_mean = np.mean(kappa_cv)
             best_kappa_std = np.std(kappa_cv)
