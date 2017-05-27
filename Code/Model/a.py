@@ -138,3 +138,9 @@ def weighted_mean_quadratic_weighted_kappa(solution, submission):
     kappas = [quadratic_weighted_kappa(group[1]["essay_score"], group[1]["predicted_score"]) for group in groups]
     weights = [group[1]["essay_weight"].irow(0) for group in groups]
     return mean_quadratic_weighted_kappa(kappas, weights=weights)
+cnt=1
+if cnt == 0:
+    this_w = 1.0
+else:
+    a=200
+a=100

@@ -18,9 +18,9 @@ from competition.feat.counting_feat import CountingFeat
 from competition.feat.distance_feat import DistanceFeat
 from competition.feat.id_feat import IdFeat
 import competition.conf.feat_params_conf as feat_param_conf
-from competition.ensemble.ensemble_selection import gen_ensemble
+from competition.ensemble.predict_ensemble import PredictEnsemble
 import competition.conf.model_library_config as model_library_config
-
+import numpy as np
 
 def preprocess():
     """
@@ -94,4 +94,7 @@ def ensemble():
     "../../Feat/solution/LSA_and_stats_feat_Jun09"
     :return:
     """
-    gen_ensemble(model_library_config.feat_folders[0])
+    predict_ensemble =PredictEnsemble()
+    feat_folder =model_library_config.feat_folders[0]
+    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight =predict_ensemble.gen_ensemble(feat_folder)
+    print("best_kappa_mean: %.6f\n best_kappa_std: %.6f\n  best_bagged_model_list: %r \n best_bagged_model_weight: %r \n " % (best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight))
