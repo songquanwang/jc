@@ -57,7 +57,7 @@ class GbdtModelImp(BaseModel):
             # (6688, 4)
             pred = bst.predict(set_obj.dvalid_base)
             w = np.asarray(range(1, model_param_conf.num_of_class + 1))
-            # 加权相乘 ？累加
+            # softprob结果是ndata * nclass矩阵，每个列值为样本所属于每个类别的概率
             pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
         else:
@@ -116,7 +116,7 @@ class GbdtModelImp(BaseModel):
         return pred
 
     def cocr_predict(self, set_obj, all=False):
-        ## cocr with xgboost
+        # cocr with xgboost
         if all == False:
             evalerror_cocr_valid = lambda preds, dtrain: utils.evalerror_cocr_cdf(preds, dtrain, set_obj.cdf_valid)
             obj = lambda preds, dtrain: utils.cocrObj(preds, set_obj.dtrain)

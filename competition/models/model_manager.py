@@ -75,5 +75,5 @@ def make_predict_by_models(specified_models):
         # 找到最优参数的std
         best_kappa_std = trials.trial_attachments(trials.trials[ind])['std']
         print("Kappa stats")
-        print("        Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))
+        print("Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))
         return best_kappa_mean, best_kappa_std

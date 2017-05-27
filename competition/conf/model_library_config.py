@@ -11,6 +11,12 @@ __description__
 __author__
 
     songquanwang
+    17个参数配置，模型支持到16个 两个regression,用到一个
+    四组特征，只用到14个参数
+    没用到一下参数：
+    param_space_clf_xgb_linear
+    param_space_rank_xgb_linear
+    param_space_ebc_xgb_linear
 
 """
 
@@ -90,7 +96,7 @@ else:
 ## In the early stage of the competition, I mostly focus on
 ## raw tfidf features and linear booster.
 
-## regression with linear booster
+# regression with linear booster
 param_space_reg_xgb_linear = {
     'task': 'regression',
     'booster': 'gblinear',
@@ -124,7 +130,7 @@ param_space_reg_xgb_tree = {
     "max_evals": hyperopt_param["xgb_max_evals"],
 }
 
-## softmax with linear booster
+## softmax with linear booster ：没用到
 param_space_clf_xgb_linear = {
     'task': 'softmax',
     'booster': 'gblinear',
@@ -141,7 +147,7 @@ param_space_clf_xgb_linear = {
     "max_evals": hyperopt_param["xgb_max_evals"],
 }
 
-## pairwise ranking with linear booster
+## pairwise ranking with linear booster ：没用到
 param_space_rank_xgb_linear = {
     'task': 'ranking',
     'booster': 'gblinear',
@@ -162,6 +168,7 @@ param_space_kappa_xgb_linear = {
     'task': 'softkappa',
     'booster': 'gblinear',
     'objective': 'reg:linear',  # for linear raw predict score
+     #该参数用在 train obj
     'hess_scale': hp.quniform('hess_scale', 0.000005, 0.0005, 0.000005),
     'eta': hp.quniform('eta', 0.01, 1, 0.01),
     'lambda': hp.quniform('lambda', 0, 0.001, 0.00001),
@@ -175,7 +182,7 @@ param_space_kappa_xgb_linear = {
     "max_evals": hyperopt_param["xgb_max_evals"]
 }
 
-## extended binary classification (ebc) with linear booster
+## extended binary classification (ebc) with linear booster ：没用到
 param_space_ebc_xgb_linear = {
     'task': 'ebc',
     'booster': 'gblinear',

@@ -303,5 +303,15 @@ class BaseModel(object):
         self.writer.writerow(headers)
         self.log_handler.flush()
 
+    @abc.abstractmethod
+    def train_predict(self, matrix, all=False):
+        """
+        所有子类模型都需要实现这个方法
+        :param matrix:
+        :param all:
+        :return:
+        """
+        return
+
 
 
