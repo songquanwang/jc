@@ -83,6 +83,8 @@ def ebcObj(preds, dtrain):
     :param preds:
     :param dtrain:
     :return:
+    grad:一阶梯度
+    hess:二阶梯度
     """
     ## label are +1/-1
     labels = dtrain.get_label()
