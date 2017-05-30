@@ -64,7 +64,8 @@ def softmax(score):
     ])
     """
     score = np.asarray(score, dtype=float)
-    score = np.exp(score - np.max(score))
+    # 下面这行代码无用
+    # score = np.exp(score - np.max(score))
     # 每行相加 归一化
     score /= np.sum(score, axis=1)[:, np.newaxis]
     return score
@@ -73,10 +74,16 @@ def softmax(score):
 ##########################
 ## Cutomized Objectives ##
 ##########################
-#### Implement the method described in the paper:
-# Ordinal Regression by Extended Binary Classification
-# Ling Li, Hsuan-Tien Lin
+####
 def ebcObj(preds, dtrain):
+    """
+    ebc:Extended Binary Classification
+    有序回归 实现了一下论文
+    论文：Ordinal Regression by Extended Binary Classification
+    :param preds:
+    :param dtrain:
+    :return:
+    """
     ## label are +1/-1
     labels = dtrain.get_label()
     weights = dtrain.get_weight()
@@ -108,6 +115,7 @@ def ebcObj(preds, dtrain):
         ## apply sample weights
         grad *= weights[:, np.newaxis]
         hess *= weights[:, np.newaxis]
+        # shape改成1维
         grad.shape = (M * N)
         hess.shape = (M * N)
     return grad, hess
@@ -117,6 +125,14 @@ def ebcObj(preds, dtrain):
 # Improving ranking performance with cost-sensitive ordinal classification via regression
 # Yu-Xun Ruan, Hsuan-Tien Lin, and Ming-Feng Tsai
 def cocrObj(preds, dtrain):
+    """
+    cocr:cost-sensitive ordinal classification via regression
+    实现论文：Improving ranking performance with cost-sensitive ordinal classification via regression
+    Yu-Xun Ruan, Hsuan-Tien Lin, and Ming-Feng Tsai
+    :param preds:
+    :param dtrain:
+    :return:
+    """
     ## label are in [0,1,2,3]
     Y = dtrain.get_label()
     Y = Y[:, np.newaxis]
