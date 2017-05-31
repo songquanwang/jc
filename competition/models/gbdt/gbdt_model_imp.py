@@ -10,8 +10,8 @@ import competition.utils.utils as utils
 
 
 class GbdtModelImp(BaseModel):
-    def __init__(self, param_space, feat_folder, feat_name):
-        super(GbdtModelImp, self).__init__(param_space, feat_folder, feat_name)
+    def __init__(self, param_space, info_folder,feat_folder, feat_name):
+        super(GbdtModelImp, self).__init__(param_space, info_folder,feat_folder, feat_name)
 
     def train_predict(self, set_obj, all=False):
         """

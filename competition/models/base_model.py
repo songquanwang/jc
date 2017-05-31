@@ -20,9 +20,10 @@ import competition.conf.model_library_config as model_conf
 class BaseModel(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, param_space, feat_folder, feat_name):
+    def __init__(self, param_space, info_folder, feat_folder, feat_name):
         self.param_space = param_space
         self.feat_folder = feat_folder
+        self.info_folder = info_folder
         self.feat_name = feat_name
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
         self.trial_counter = 0
@@ -31,29 +32,31 @@ class BaseModel(object):
         self.writer = csv.writer(self.log_handler)
 
     def init_all_path(self):
-        path = "%s/All" % (self.feat_folder)
-        self.feat_train_path = "%s/train.feat" % path
-        self.feat_test_path = "%s/test.feat" % path
+        feat_path = "%s/All" % (self.feat_folder)
+        info_path = "%s/All" % (self.info_folder)
+        self.feat_train_path = "%s/train.feat" % feat_path
+        self.feat_test_path = "%s/test.feat" % feat_path
 
-        self.weight_train_path = "%s/train.feat.weight" % path
+        self.weight_train_path = "%s/train.feat.weight" % info_path
 
-        self.info_train_path = "%s/train.info" % path
-        self.info_test_path = "%s/test.info" % path
+        self.info_train_path = "%s/train.info" % info_path
+        self.info_test_path = "%s/test.info" % info_path
 
-        self.cdf_test_path = "%s/test.cdf" % path
+        self.cdf_test_path = "%s/test.cdf" % info_path
 
     def init_run_fold_path(self, run, fold, matrix):
-        path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
-        matrix.feat_train_path = "%s/train.feat" % path
-        matrix.feat_valid_path = "%s/valid.feat" % path
+        feat_path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
+        info_path = "%s/Run%d/Fold%d" % (self.info_folder, run, fold)
+        matrix.feat_train_path = "%s/train.feat" % feat_path
+        matrix.feat_valid_path = "%s/valid.feat" % feat_path
 
-        matrix.weight_train_path = "%s/train.feat.weight" % path
-        matrix.weight_valid_path = "%s/valid.feat.weight" % path
+        matrix.weight_train_path = "%s/train.feat.weight" % info_path
+        matrix.weight_valid_path = "%s/valid.feat.weight" % info_path
 
-        matrix.info_train_path = "%s/train.info" % path
-        matrix.info_valid_path = "%s/valid.info" % path
+        matrix.info_train_path = "%s/train.info" % info_path
+        matrix.info_valid_path = "%s/valid.info" % info_path
 
-        matrix.cdf_valid_path = "%s/valid.cdf" % path
+        matrix.cdf_valid_path = "%s/valid.cdf" % info_path
 
     def get_output_all_path(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std):
         save_path = "%s/All" % model_param_conf.output_path
@@ -312,6 +315,3 @@ class BaseModel(object):
         :return:
         """
         return
-
-
-

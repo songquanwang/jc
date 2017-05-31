@@ -58,7 +58,7 @@ def preprocess():
     dfTest["index"] = np.arange(num_test)
 
     ## one-hot encode the median_relevance ：dummy median_relevance
-    for i in range(config.n_classes):
+    for i in range(config.num_of_class):
         dfTrain["median_relevance_%d" % (i + 1)] = 0
         dfTrain["median_relevance_%d" % (i + 1)][dfTrain["median_relevance"] == (i + 1)] = 1
 
@@ -91,13 +91,4 @@ def preprocess():
 
     print("Done.")
 
-    """
-    ## pos tag text
-    dfTrain = dfTrain.apply(pos_tag_text, axis=1)
-    dfTest = dfTest.apply(pos_tag_text, axis=1)
-    with open(config.pos_tagged_train_data_path, "wb") as f:
-        cPickle.dump(dfTrain, f, -1)
-    with open(config.pos_tagged_test_data_path, "wb") as f:
-        cPickle.dump(dfTest, f, -1)
-    print("Done.")
-    """
+

@@ -114,11 +114,11 @@ class BasicTfidfFeat(BaseFeat):
 
         if metric == "cosine":
             # 生成 len(ids_test)行，class(分类个数)列的 多维数组
-            stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.n_classes), dtype=float)
+            stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
             # sim 0-1 1完全相同
             sim = 1. - pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
         elif metric == "euclidean":
-            stats_feat = -1 * np.ones((len(ids_test), self.stats_feat_num * config.n_classes), dtype=float)
+            stats_feat = -1 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
             # 返回xtest行 xtrain列的array
             sim = pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
 
@@ -127,7 +127,7 @@ class BasicTfidfFeat(BaseFeat):
             if qids_test is not None:
                 qid = qids_test[i]
             # 一行分别于某一类的距离做比较
-            for j in range(config.n_classes):
+            for j in range(config.num_of_class):
                 # if赋值语句
                 key = (qid, j + 1) if qids_test is not None else j + 1
                 if indices_dict.has_key(key):
@@ -523,7 +523,7 @@ class BasicTfidfFeat(BaseFeat):
         with open(config.processed_test_data_path, "rb") as f:
             df_test = cPickle.load(f)
         # 读取分层交叉验证数据索引
-        with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
+        with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
             skf = cPickle.load(f)
 
 
@@ -536,7 +536,7 @@ class BasicTfidfFeat(BaseFeat):
         df_train["all_text"] = list(df_train.apply(cat_text, axis=1))
         df_test["all_text"] = list(df_test.apply(cat_text, axis=1))
 
-        # vec_type: "tfidf", "bow"] ; vocabulary_type："common"
+        # vec_type: ["tfidf", "bow"] ; vocabulary_type："common"
         for vec_type in self.vec_types:
             ## save feat names
             feat_names = ["query", "title", "description"]
@@ -550,7 +550,7 @@ class BasicTfidfFeat(BaseFeat):
                 # use 33% for training and 67 % for validation so we switch trainInd and validInd
                 for fold, (validInd, trainInd) in enumerate(skf[run]):
                     print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-                    path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
+                    path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                     dfTrain_train_train = df_train.iloc[trainInd].copy()
                     dfTrain_train_valid = df_train.iloc[validInd].copy()
                     self.extract_feat(path, dfTrain_train_train, dfTrain_train_valid, vec_type, "valid", feat_names, self.column_names)
@@ -558,12 +558,11 @@ class BasicTfidfFeat(BaseFeat):
             print("Done.")
 
             print("For training and testing...")
-            path = "%s/All" % config.feat_folder
+            path = "%s/All" % config.solution_feat_base
             ## extract feat
             feat_names = self.extract_feat(path, df_train, df_test, "test", feat_names, self.column_names)
-            ## dump feat name
-            ## file to save feat names
-            feat_name_file = "%s/basic_%s_and_cosine_sim.feat_name" % (config.feat_folder, vec_type)
+            # 保存所有的文件名字，好像没有成功
+            feat_name_file = "%s/basic_%s_and_cosine_sim.feat_name" % (config.solution_feat_combined, vec_type)
             self.dump_feat_name(feat_names, feat_name_file)
 
             print("All Done.")

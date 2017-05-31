@@ -31,7 +31,7 @@ import pandas as pd
 import competition.conf.model_params_conf as  config
 
 
-def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y):
+def gen_run_fold_info(run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y):
     """
     注意，没有 dfTest，dfTest_original 。 run fold是把训练数据分成 训练和验证两部分
     :param feat_path_name:
@@ -45,7 +45,7 @@ def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain
     """
 
     print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-    path = "%s/%s/Run%d/Fold%d" % (config.feat_folder, feat_name, run + 1, fold + 1)
+    path = "%s/Run%d/Fold%d" % (config.solution_info, run + 1, fold + 1)
     if not os.path.exists(path):
         os.makedirs(path)
     ##########################
@@ -81,7 +81,7 @@ def gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain
     dfTrain_original.iloc[validInd].to_csv("%s/valid.info" % path, index=False, header=True)
 
 
-def gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original, Y):
+def gen_all_info(dfTrain, dfTest, dfTrain_original, dfTest_original, Y):
     """
     没有test.feat.weight
     :param feat_path_name:
@@ -93,7 +93,7 @@ def gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original, 
     :return:
     """
     print("For training and testing...")
-    path = "%s/%s/All" % (config.feat_folder, feat_name)
+    path = "%s/All" % config.solution_info
     raise_to = 0.5
     var = dfTrain["relevance_variance"].values
     if not os.path.exists(path):
@@ -104,19 +104,19 @@ def gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original, 
     np.savetxt("%s/train.feat.weight" % path, weight, fmt="%.6f")
 
     ## group
-    np.savetxt("%s/%s/All/train.feat.group" % (config.feat_folder, feat_name), [dfTrain.shape[0]], fmt="%d")
-    np.savetxt("%s/%s/All/test.feat.group" % (config.feat_folder, feat_name), [dfTest.shape[0]], fmt="%d")
+    np.savetxt("%s/train.feat.group" % path, [dfTrain.shape[0]], fmt="%d")
+    np.savetxt("%s/test.feat.group" % path, [dfTest.shape[0]], fmt="%d")
     ## cdf
     hist_full = np.bincount(Y)
     print (hist_full) / float(sum(hist_full))
     overall_cdf_full = np.cumsum(hist_full) / float(sum(hist_full))
-    np.savetxt("%s/%s/All/test.cdf" % (config.feat_folder, feat_name), overall_cdf_full)
+    np.savetxt("%s/test.cdf" % path, overall_cdf_full)
     ## info
-    dfTrain_original.to_csv("%s/%s/All/train.info" % (config.feat_folder, feat_name), index=False, header=True)
-    dfTest_original.to_csv("%s/%s/All/test.info" % (config.feat_folder, feat_name), index=False, header=True)
+    dfTrain_original.to_csv("%s/train.info" % path, index=False, header=True)
+    dfTest_original.to_csv("%s/test.info" % path, index=False, header=True)
 
 
-def gen_info(feat_name):
+def gen_info():
     """
     生成模型所用的 weight、cdf、info、group等文件
     :param feat_path_name:
@@ -130,14 +130,14 @@ def gen_info(feat_name):
     # 打开原始数据
     dfTrain_original = pd.read_csv(config.original_train_data_path).fillna("")
     dfTest_original = pd.read_csv(config.original_test_data_path).fillna("")
-    #为test插入假的label（test没有label） 相关性全置1；方差全置0
+    # 为test插入假的label（test没有label） 相关性全置1；方差全置0
     dfTest_original["median_relevance"] = np.ones((dfTest_original.shape[0]))
     dfTest_original["relevance_variance"] = np.zeros((dfTest_original.shape[0]))
     # change it to zero-based for classification
     Y = dfTrain_original["median_relevance"].values - 1
 
-    ## load pre-defined stratified k-fold index     stratifiedKFold.query.pkl文件何来？
-    with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
+    # load pre-defined stratified k-fold index
+    with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
         skf = cPickle.load(f)
 
     print("Generate info...")
@@ -145,22 +145,14 @@ def gen_info(feat_name):
     for run in range(config.n_runs):
         ## use 33% for training and 67 % for validation so we switch trainInd and validInd
         for fold, (validInd, trainInd) in enumerate(skf[run]):
-            gen_run_fold_info(feat_name, run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y)
+            gen_run_fold_info( run, fold, dfTrain, trainInd, validInd, dfTrain_original, Y)
 
     print("Done.")
 
     print("For training and testing...")
     # 生成all
-    gen_all_info(feat_name, dfTrain, dfTest, dfTrain_original, dfTest_original)
+    gen_all_info( dfTrain, dfTest, dfTrain_original, dfTest_original, Y)
     print("All Done.")
 
 
-if __name__ == "__main__":
 
-    gen_info(feat_path_name="LSA_and_stats_feat_Jun09")
-
-    gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun23")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun27")

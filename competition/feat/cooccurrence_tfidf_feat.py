@@ -152,8 +152,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         ]
         ## feature names
         feat_names = [name + "_tfidf" for name in column_names]
-        ## file to save feat names
-        feat_name_file = "%s/intersect_tfidf.feat_name" % config.feat_folder
+
 
         ngram_range = config.cooccurrence_tfidf_ngram_range
 
@@ -165,7 +164,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         with open(config.processed_test_data_path, "rb") as f:
             dfTest = cPickle.load(f)
         ## load pre-defined stratified k-fold index
-        with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
+        with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
             skf = cPickle.load(f)
 
         print("==================================================")
@@ -184,7 +183,7 @@ class CooccurenceTfidfFeat(BaseFeat):
             # use 33% for training and 67 % for validation ,so we switch trainInd and validInd
             for fold, (validInd, trainInd) in enumerate(skf[run]):
                 print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-                path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
+                path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                 X_tfidf_train = dfTrain.iloc[trainInd]
                 X_tfidf_valid = dfTrain.iloc[validInd]
                 self.gen_tfidf_svd_by_feat_column_names(path, X_tfidf_train, X_tfidf_valid, "valid", ngram_range, feat_names,
@@ -194,14 +193,14 @@ class CooccurenceTfidfFeat(BaseFeat):
 
         # Re-training
         print("For training and testing...")
-        path = "%s/All" % config.feat_folder
+        path = "%s/All" % config.solution_feat_base
         self.gen_tfidf_svd_by_feat_column_names(path, dfTrain, dfTest, "test", ngram_range, feat_names, column_names)
-
+        feat_names += ["%s_individual_svd%d" % (f, svd_n_components) for f in feat_names]
         print("Done.")
 
-        # save feat names
+        # 保存所有的特征名字：intersect_tfidf.feat_name
+        feat_name_file = "%s/intersect_tfidf.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)
-        feat_names += ["%s_individual_svd%d" % (f, svd_n_components) for f in feat_names]
         self.dump_feat_name(feat_names, feat_name_file)
 
         print("All Done.")

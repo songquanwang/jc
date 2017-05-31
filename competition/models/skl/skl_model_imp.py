@@ -19,8 +19,8 @@ import competition.conf.model_params_conf as model_param_conf
 
 
 class SklModelImp(BaseModel):
-    def __init__(self, param_space, feat_folder, feat_name):
-        super(SklModelImp, self).__init__(param_space, feat_folder, feat_name)
+    def __init__(self, param_space, info_folder,feat_folder, feat_name):
+        super(SklModelImp, self).__init__(param_space, info_folder,feat_folder, feat_name)
 
     def train_predict(self, set_obj, all=False):
         """

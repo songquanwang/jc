@@ -119,14 +119,14 @@ class DistanceFeat(BaseFeat):
         :param qids_test:
         :return:
         """
-        stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.n_classes), dtype=float)
+        stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
         ## pairwise dist
         distance = DistanceFeat.pairwise_dist(X_test, X_train, dist)
         for i in range(len(ids_test)):
             id = ids_test[i]
             if qids_test is not None:
                 qid = qids_test[i]
-            for j in range(config.n_classes):
+            for j in range(config.num_of_class):
                 key = (qid, j + 1) if qids_test is not None else j + 1
                 if indices_dict.has_key(key):
                     inds = indices_dict[key]
@@ -252,11 +252,8 @@ class DistanceFeat(BaseFeat):
         with open(config.processed_test_data_path, "rb") as f:
             dfTest = cPickle.load(f)
         ## load pre-defined stratified k-fold index
-        with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, config.stratified_label), "rb") as f:
+        with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
             skf = cPickle.load(f)
-
-        ## file to save feat names
-        feat_name_file = "%s/distance.feat_name" % config.feat_folder
 
         feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]
 
@@ -277,7 +274,7 @@ class DistanceFeat(BaseFeat):
             # use 33% for training and 67 % for validation,so we switch trainInd and validInd
             for fold, (validInd, trainInd) in enumerate(skf[run]):
                 print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-                path = "%s/Run%d/Fold%d" % (config.feat_folder, run + 1, fold + 1)
+                path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
 
                 X_train_train = dfTrain.iloc[trainInd]
                 X_train_valid = dfTrain.iloc[validInd]
@@ -286,13 +283,13 @@ class DistanceFeat(BaseFeat):
         print("Done.")
 
         print("For training and testing...")
-        path = "%s/All" % config.feat_folder
+        path = "%s/All" % config.solution_feat_base
 
         self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
 
-        ## save feat names
+        # 保存所有的特征名字 ：distance.feat_name
+        feat_name_file = "%s/distance.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)
-        ## dump feat name
         self.dump_feat_name(feat_names, feat_name_file)
 
         print("All Done.")

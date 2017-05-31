@@ -15,8 +15,8 @@ import competition.conf.model_params_conf as model_param_conf
 
 
 class LibfmModelImp(BaseModel):
-    def __init__(self, param_space, feat_folder, feat_name):
-        super(LibfmModelImp, self).__init__(param_space, feat_folder, feat_name)
+    def __init__(self, param_space, info_folder,feat_folder, feat_name):
+        super(LibfmModelImp, self).__init__(param_space,info_folder, feat_folder, feat_name)
 
     def train_predict(self, matrix, all=False):
         """

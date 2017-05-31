@@ -44,7 +44,7 @@ class PredictEnsemble(object):
         # run-fold-行
         self.y_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
         # run-fold-4类别
-        self.cdf_list_valid = np.zeros((config.n_runs, config.n_folds, config.n_classes), dtype=float)
+        self.cdf_list_valid = np.zeros((config.n_runs, config.n_folds, config.num_of_class), dtype=float)
         # run-fold
         self.num_valid_matrix = np.zeros((config.n_runs, config.n_folds), dtype=int)
         # run-fold-行

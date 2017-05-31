@@ -50,5 +50,5 @@ def gen_stratified_kfold():
                 print(trainInd[:10])
                 print("Valid (num = %s)" % len(validInd))
                 print(validInd[:10])
-        with open("%s/stratifiedKFold.%s.pkl" % (config.data_folder, stratified_label), "wb") as f:
+        with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, stratified_label), "wb") as f:
             cPickle.dump(skf, f, -1)

@@ -14,7 +14,7 @@ import competition.conf.model_params_conf as config
 import competition.conf.model_library_config  as model_library_config
 
 
-def create_model(param_space, feat_folder, feat_name):
+def create_model(param_space, info_folder, feat_folder, feat_name):
     """
     模型工厂，根据参数创建模型对象
     :param param_space:
@@ -23,15 +23,15 @@ def create_model(param_space, feat_folder, feat_name):
     :return:
     """
     if param_space["task"] in ["regression", "ranking", "softmax", "softkappa", "ebc", "cocr"]:
-        return GbdtModelImp(param_space, feat_folder, feat_name)
+        return GbdtModelImp(param_space, info_folder, feat_folder, feat_name)
     elif param_space["task"] in ["reg_skl_rf", "reg_skl_etr", "reg_skl_gbm", "clf_skl_lr", "reg_skl_svr", "reg_skl_ridge", "reg_skl_lasso"]:
-        return SklModelImp(param_space, feat_folder, feat_name)
+        return SklModelImp(param_space, info_folder, feat_folder, feat_name)
     elif param_space["task"] in ["reg_keras_dnn"]:
-        return KerasDnnModelImp(param_space, feat_folder, feat_name)
+        return KerasDnnModelImp(param_space, info_folder, feat_folder, feat_name)
     elif param_space["task"] in ["reg_keras_dnn"]:
-        return LibfmModelImp(param_space, feat_folder, feat_name)
+        return LibfmModelImp(param_space, info_folder, feat_folder, feat_name)
     elif param_space["task"] in ["reg_keras_dnn"]:
-        return RgfModelImp(param_space, feat_folder, feat_name)
+        return RgfModelImp(param_space, info_folder, feat_folder, feat_name)
     else:
         raise Exception('暂时不支持改模型!')
 
@@ -50,7 +50,7 @@ def make_predict_by_models(specified_models):
         if feat_name not in model_library_config.feat_names:
             continue
         feat_folder, param_space = model_library_config.model_config[feat_name]
-        model = create_model(param_space, feat_folder, feat_name)
+        model = create_model(param_space, config.solution_info, feat_folder, feat_name)
         model.log_header()
 
         print("************************************************************")

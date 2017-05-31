@@ -12,22 +12,25 @@ from competition.preprocess.preprocess import preprocess
 from competition.preprocess.init_path import init_path
 from competition.preprocess.kfold import gen_stratified_kfold
 from competition.info.gen_info import gen_info
-import competition.models.model_manager as model_manager
 
 import competition.conf.feat.LSA_and_stats_feat_Jun09_Low as LSA_and_stats_feat_Jun09_Low
 import competition.conf.feat.LSA_svd150_and_Jaccard_coef_Jun14_Low as LSA_svd150_and_Jaccard_coef_Jun14_Low
 import competition.conf.feat.svd100_and_bow_Jun23_Low as svd100_and_bow_Jun23_Low
 import competition.conf.feat.svd100_and_bow_Jun27_High as svd100_and_bow_Jun27_High
 
+import competition.conf.feat_params_conf as feat_param_conf
 from competition.feat.base_feat import BaseFeat
 from competition.feat.basic_tfidf_feat import BasicTfidfFeat
 from competition.feat.cooccurrence_tfidf_feat import CooccurenceTfidfFeat
 from competition.feat.counting_feat import CountingFeat
 from competition.feat.distance_feat import DistanceFeat
 from competition.feat.id_feat import IdFeat
-import competition.conf.feat_params_conf as feat_param_conf
-from competition.ensemble.predict_ensemble import PredictEnsemble
+
 import competition.conf.model_library_config as model_library_config
+import competition.models.model_manager as model_manager
+
+from competition.ensemble.predict_ensemble import PredictEnsemble
+
 
 def preprocess():
     """
@@ -42,7 +45,17 @@ def preprocess():
     gen_stratified_kfold()
 
 
+def gen_info():
+    """
+    创建info文件
+    :return:
+    """
+    # 生成数据的统计信息，这些info跟特征无关
+    gen_info()
+
+
 def gen_feat():
+    # 不仅生成特征文件，还生成四个特征文件名字的文件 在Feat/solution/counting.feat_name等..
     # 生成所有的特征+label
     stats_feat_flag = feat_param_conf.stats_feat_flag
     # 生成basic tfidf feat
@@ -69,20 +82,6 @@ def gen_feat():
     BaseFeat.combine_feat(svd100_and_bow_Jun23_Low.feat_names, feat_path_name="svd100_and_bow_Jun23")
 
     BaseFeat.combine_feat(svd100_and_bow_Jun27_High.feat_names, feat_path_name="svd100_and_bow_Jun27")
-
-
-def gen_info():
-    """
-    创建info文件
-    :return:
-    """
-    gen_info(feat_path_name="LSA_and_stats_feat_Jun09")
-
-    gen_info(feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun23")
-
-    gen_info(feat_path_name="svd100_and_bow_Jun27")
 
 
 def predict(specified_models):

@@ -20,17 +20,35 @@ import competition.conf.model_params_conf as config
 
 
 def init_path():
-    # create feat folder
-    if not os.path.exists(config.feat_folder):
-        os.makedirs(config.feat_folder)
+    # create base feat
+    if not os.path.exists(config.solution_feat_base):
+        os.makedirs(config.solution_feat_base)
+    # create combined feat
+    if not os.path.exists(config.solution_feat_combined):
+        os.makedirs(config.solution_feat_combined)
+    # create data
+    if not os.path.exists(config.solution_data):
+        os.makedirs(config.solution_data)
+    # create output
+    if not os.path.exists(config.solution_output):
+        os.makedirs(config.solution_output)
+    # create info
+    if not os.path.exists(config.solution_info):
+        os.makedirs(config.solution_info)
 
     # creat folder for the training and testing feat
-    if not os.path.exists("%s/All" % config.feat_folder):
-        os.makedirs("%s/All" % config.feat_folder)
+    if not os.path.exists("%s/All" % config.solution_feat_base):
+        os.makedirs("%s/All" % config.solution_feat_base)
+
+    if not os.path.exists("%s/All" % config.solution_feat_combined):
+        os.makedirs("%s/All" % config.solution_feat_combined)
 
     # creat folder for each run and fold
     for run in range(1, config.n_runs + 1):
         for fold in range(1, config.n_folds + 1):
-            path = "%s/Run%d/Fold%d" % (config.feat_folder, run, fold)
-            if not os.path.exists(path):
-                os.makedirs(path)
+            path_base = "%s/Run%d/Fold%d" % (config.solution_feat_base, run, fold)
+            path_combined = "%s/Run%d/Fold%d" % (config.solution_feat_combined, run, fold)
+            if not os.path.exists(path_base):
+                os.makedirs(path_base)
+            if not os.path.exists(path_combined):
+                os.makedirs(path_combined)
