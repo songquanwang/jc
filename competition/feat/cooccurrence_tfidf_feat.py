@@ -62,6 +62,7 @@ class CooccurenceTfidfFeat(BaseFeat):
 
         self.svd_n_components = 100
 
+    @staticmethod
     def cooccurrence_terms(lst1, lst2, join_str):
         """
             Cooccurrence terms：两组单词任意组合，用join_str链接
@@ -80,7 +81,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         return res
 
     def extract_feat(self, df):
-        cooccurrence_terms = self.cooccurrence_terms
+        cooccurrence_terms = CooccurenceTfidfFeat.cooccurrence_terms
         ## cooccurrence terms
         join_str = "X"
         # query_unigram * [titile,description] =4

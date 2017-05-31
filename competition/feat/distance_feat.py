@@ -43,15 +43,14 @@ import competition.conf.model_params_conf as  config
 from competition.feat.nlp.nlp_utils import preprocess_data
 from  competition.feat.base_feat import BaseFeat
 import competition.utils.utils as utils
+import competition.conf.feat_params_conf as feat_params_conf
 
 
 class DistanceFeat(BaseFeat):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, stats_feat_flag=True):
+    def __init__(self):
 
-        # 是否计算统计特征
-        self.stats_feat_flag = stats_feat_flag
         # stats to extract
         self.quantiles_range = np.arange(0, 1.5, 0.5)
         self.stats_func = [np.mean, np.std]
@@ -239,7 +238,7 @@ class DistanceFeat(BaseFeat):
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(dfTest, f, -1)
             ## extract statistical distance features
-            if self.stats_feat_flag:
+            if feat_params_conf.stats_feat_flag:
                 dfTrain_copy = dfTrain.copy()
                 dfTest_copy = dfTest.copy()
                 self.extract_statistical_distance_feat(path, dfTrain_copy, dfTest_copy, mode, feat_names)

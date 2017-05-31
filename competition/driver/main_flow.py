@@ -18,7 +18,6 @@ import competition.conf.feat.LSA_svd150_and_Jaccard_coef_Jun14_Low as LSA_svd150
 import competition.conf.feat.svd100_and_bow_Jun23_Low as svd100_and_bow_Jun23_Low
 import competition.conf.feat.svd100_and_bow_Jun27_High as svd100_and_bow_Jun27_High
 
-import competition.conf.feat_params_conf as feat_param_conf
 from competition.feat.base_feat import BaseFeat
 from competition.feat.basic_tfidf_feat import BasicTfidfFeat
 from competition.feat.cooccurrence_tfidf_feat import CooccurenceTfidfFeat
@@ -57,9 +56,8 @@ def gen_info():
 def gen_feat():
     # 不仅生成特征文件，还生成四个特征文件名字的文件 在Feat/solution/counting.feat_name等..
     # 生成所有的特征+label
-    stats_feat_flag = feat_param_conf.stats_feat_flag
     # 生成basic tfidf feat
-    basic_tfidf_feat = BasicTfidfFeat(stats_feat_flag)
+    basic_tfidf_feat = BasicTfidfFeat()
     basic_tfidf_feat.gen_basic_tfidf_feat()
     # 生成coocrrence tfidf feat
     cooccurence_tfidf_feat = CooccurenceTfidfFeat()
@@ -68,7 +66,7 @@ def gen_feat():
     counting_feat = CountingFeat()
     counting_feat.gen_counting_feat()
     # 生成 distance feat
-    distance_feat = DistanceFeat(stats_feat_flag)
+    distance_feat = DistanceFeat()
     distance_feat.gen_distance_feat()
     # 生成id feat
     id_feat = IdFeat()
