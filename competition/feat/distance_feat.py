@@ -141,7 +141,8 @@ class DistanceFeat(BaseFeat):
                         stats_feat[i, j * self.stats_feat_num:(j + 1) * self.stats_feat_num] = feat
         return stats_feat
 
-    def extract_basic_distance_feat(self, df):
+    @staticmethod
+    def extract_basic_distance_feat(df):
         """
         Extract basic distance features
         :param df:
@@ -181,7 +182,7 @@ class DistanceFeat(BaseFeat):
                                 lambda x: DistanceFeat.compute_dist(x[target_name + "_" + gram], x[obs_name + "_" + gram], dist),
                                 axis=1))
 
-    def extract_statistical_distance_feat(self, path, dfTrain, dfTest, mode, feat_names):
+    def extract_statistical_distance_feat(self, path, dfTrain, dfTest, mode):
         """
 
         :param path:
@@ -230,6 +231,7 @@ class DistanceFeat(BaseFeat):
         return new_feat_names
 
     def gen_distance_by_feat_names(self, path, dfTrain, dfTest, mode, feat_names):
+        new_feat_names = []
         for feat_name in feat_names:
             X_train = dfTrain[feat_name]
             dfTest = dfTest[feat_name]
@@ -237,13 +239,21 @@ class DistanceFeat(BaseFeat):
                 cPickle.dump(X_train, f, -1)
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(dfTest, f, -1)
-            ## extract statistical distance features
+            # add basic feat
+            new_feat_names.append(feat_name)
+            # extract statistical distance features
             if feat_params_conf.stats_feat_flag:
                 dfTrain_copy = dfTrain.copy()
                 dfTest_copy = dfTest.copy()
-                self.extract_statistical_distance_feat(path, dfTrain_copy, dfTest_copy, mode, feat_names)
+                added_feat_names = self.extract_statistical_distance_feat(path, dfTrain_copy, dfTest_copy, mode, feat_names)
+                new_feat_names.extend(added_feat_names)
+        return new_feat_names
 
     def gen_distance_feat(self):
+        """
+
+        :return:
+        """
 
         # Load Data
         with open(config.processed_train_data_path, "rb") as f:
@@ -254,7 +264,6 @@ class DistanceFeat(BaseFeat):
         with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
             skf = cPickle.load(f)
 
-        feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]
 
         #######################
         ## Generate Features ##
@@ -264,9 +273,11 @@ class DistanceFeat(BaseFeat):
 
         self.gen_temp_feat(dfTrain)
         self.gen_temp_feat(dfTest)
-        self.extract_basic_distance_feat(dfTrain)
+        DistanceFeat.extract_basic_distance_feat(dfTrain)
         ## use full version for X_train
-        self.extract_basic_distance_feat(dfTest)
+        DistanceFeat.extract_basic_distance_feat(dfTest)
+
+        feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]
 
         print("For cross-validation...")
         for run in range(config.n_runs):
@@ -284,11 +295,10 @@ class DistanceFeat(BaseFeat):
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
 
-        added_feat_names=self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
+        added_feat_names = self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
 
         # 保存所有的特征名字 ：distance.feat_name
-        new_feat_names=[]
-        new_feat_names.extend(feat_names)
+        new_feat_names = []
         new_feat_names.extend(added_feat_names)
         feat_name_file = "%s/distance.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)

@@ -129,7 +129,7 @@ class CountingFeat(BaseFeat):
                         df["pos_of_%s_%s_in_%s_max" % (obs_name, gram, target_name)] = map(np.max, pos)
                         df["pos_of_%s_%s_in_%s_std" % (obs_name, gram, target_name)] = map(np.std, pos)
                         ## stats feat on normalized_pos
-                        df["normalized_pos_of_%s_%s_in_%s_min" % (obs_name, gram, target_name)] = map(utils.utils.try_divide, df["pos_of_%s_%s_in_%s_min" % (obs_name, gram, target_name)],
+                        df["normalized_pos_of_%s_%s_in_%s_min" % (obs_name, gram, target_name)] = map(utils.try_divide, df["pos_of_%s_%s_in_%s_min" % (obs_name, gram, target_name)],
                                                                                                       df["count_of_%s_%s" % (obs_name, gram)])
                         df["normalized_pos_of_%s_%s_in_%s_mean" % (obs_name, gram, target_name)] = map(utils.try_divide, df["pos_of_%s_%s_in_%s_mean" % (obs_name, gram, target_name)],
                                                                                                        df["count_of_%s_%s" % (obs_name, gram)])
