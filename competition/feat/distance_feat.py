@@ -191,7 +191,7 @@ class DistanceFeat(BaseFeat):
         :param feat_names:
         :return:
         """
-        new_feat_names = copy(feat_names)
+        new_feat_names = []
         ## get the indices of pooled samples
         relevance_indices_dict = self.get_sample_indices_by_relevance(dfTrain)
         query_relevance_indices_dict = self.get_sample_indices_by_relevance(dfTrain, "qid")
@@ -284,11 +284,14 @@ class DistanceFeat(BaseFeat):
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
 
-        self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
+        added_feat_names=self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
 
         # 保存所有的特征名字 ：distance.feat_name
+        new_feat_names=[]
+        new_feat_names.extend(feat_names)
+        new_feat_names.extend(added_feat_names)
         feat_name_file = "%s/distance.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)
-        self.dump_feat_name(feat_names, feat_name_file)
+        self.dump_feat_name(new_feat_names, feat_name_file)
 
         print("All Done.")

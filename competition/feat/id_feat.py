@@ -87,4 +87,8 @@ class IdFeat(BaseFeat):
         self.gen_id_feat_all(id_names, dfTrain, dfTest, lb)
         print("Done.")
 
+        # 保存特征文件
+        feat_name_file = "%s/id.feat_name" % (config.solution_feat_combined)
+        self.dump_feat_name(id_names, feat_name_file)
+
         print("All Done.")

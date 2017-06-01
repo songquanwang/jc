@@ -45,6 +45,7 @@ from  competition.feat.base_feat import BaseFeat
 class CountingFeat(BaseFeat):
     __metaclass__ = abc.ABCMeta
 
+    @staticmethod
     def get_position_list(target, obs):
         """
             Get the list of positions of obs in target
@@ -60,7 +61,7 @@ class CountingFeat(BaseFeat):
 
     def extract_digit_count_feat(self, df, feat_names, grams):
         """
-         word count and digit count
+         word count and digit count 22个 +1
         :param df:
         :param feat_names:
         :param grams:
@@ -85,7 +86,7 @@ class CountingFeat(BaseFeat):
 
     def extract_interset_digit_count_feat(self, df, feat_names, grams):
         """
-        intersect word count
+        intersect word count 48个
         :param df:
         :param feat_names:
         :param grams:
@@ -120,7 +121,7 @@ class CountingFeat(BaseFeat):
             for target_name in feat_names:
                 for obs_name in feat_names:
                     if target_name != obs_name:
-                        pos = list(df.apply(lambda x: self.get_position_list(x[target_name + "_" + gram], obs=x[obs_name + "_" + gram]), axis=1))
+                        pos = list(df.apply(lambda x: CountingFeat.get_position_list(x[target_name + "_" + gram], obs=x[obs_name + "_" + gram]), axis=1))
                         ## stats feat on pos
                         df["pos_of_%s_%s_in_%s_min" % (obs_name, gram, target_name)] = map(np.min, pos)
                         df["pos_of_%s_%s_in_%s_mean" % (obs_name, gram, target_name)] = map(np.mean, pos)
@@ -181,6 +182,10 @@ class CountingFeat(BaseFeat):
                 cPickle.dump(X_test, f, -1)
 
     def gen_counting_feat(self):
+        """
+
+        :return:
+        """
 
         with open(config.processed_train_data_path, "rb") as f:
             dfTrain = cPickle.load(f)
@@ -190,6 +195,16 @@ class CountingFeat(BaseFeat):
         with open("%s/stratifiedKFold.%s.pkl" % (config.solution_data, config.stratified_label), "rb") as f:
             skf = cPickle.load(f)
 
+        print("==================================================")
+        print("Generate counting features...")
+
+        # 生成临时特征
+        self.gen_temp_feat(dfTrain)
+        self.gen_temp_feat(dfTest)
+        # 生成其他特征
+        self.extract_feat(dfTrain)
+        self.extract_feat(dfTest)
+
         feat_names = [
             name for name in dfTrain.columns \
             if "count" in name \
@@ -198,14 +213,6 @@ class CountingFeat(BaseFeat):
             or "pos_of" in name
             ]
         feat_names.append("description_missing")
-
-        print("==================================================")
-        print("Generate counting features...")
-
-        self.gen_temp_feat(dfTrain)
-        self.gen_temp_feat(dfTest)
-        self.extract_feat(dfTrain)
-        self.extract_feat(dfTest)
 
         print("For cross-validation...")
         for run in range(config.n_runs):
@@ -224,8 +231,9 @@ class CountingFeat(BaseFeat):
         self.gen_count_pos_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
 
         # 保存所有的特征名字：counting.feat_name
+        new_feat_names = feat_names
         feat_name_file = "%s/counting.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)
-        self.dump_feat_name(feat_names, feat_name_file)
+        self.dump_feat_name(new_feat_names, feat_name_file)
 
         print("All Done.")

@@ -25,10 +25,10 @@ from competition.feat.counting_feat import CountingFeat
 from competition.feat.distance_feat import DistanceFeat
 from competition.feat.id_feat import IdFeat
 
-import competition.conf.model_library_config as model_library_config
-import competition.models.model_manager as model_manager
-
-from competition.ensemble.predict_ensemble import PredictEnsemble
+# import competition.conf.model_library_config as model_library_config
+# import competition.models.model_manager as model_manager
+#
+# from competition.ensemble.predict_ensemble import PredictEnsemble
 
 
 def preprocess():
@@ -88,8 +88,8 @@ def predict(specified_models):
     :param specified_models:
     :return:best_kappa_mean, best_kappa_std
     """
-    best_kappa_mean, best_kappa_std = model_manager.make_predict_by_models(specified_models)
-    print("Mean: %.6f\n Std: %.6f" % (best_kappa_mean, best_kappa_std))
+    #best_kappa_mean, best_kappa_std = model_manager.make_predict_by_models(specified_models)
+    #print("Mean: %.6f\n Std: %.6f" % (best_kappa_mean, best_kappa_std))
 
 
 def ensemble():
@@ -97,7 +97,12 @@ def ensemble():
     "../../Feat/solution/LSA_and_stats_feat_Jun09"
     :return:
     """
-    predict_ensemble = PredictEnsemble()
-    feat_folder = model_library_config.feat_folders[0]
-    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = predict_ensemble.gen_ensemble(feat_folder)
-    print("best_kappa_mean: %.6f\n best_kappa_std: %.6f\n  best_bagged_model_list: %r \n best_bagged_model_weight: %r \n " % (best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight))
+    # predict_ensemble = PredictEnsemble()
+    # feat_folder = model_library_config.feat_folders[0]
+    # best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = predict_ensemble.gen_ensemble(feat_folder)
+    # print("best_kappa_mean: %.6f\n best_kappa_std: %.6f\n  best_bagged_model_list: %r \n best_bagged_model_weight: %r \n " % (best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight))
+
+if __name__ == "__main__":
+    gen_feat()
+
+

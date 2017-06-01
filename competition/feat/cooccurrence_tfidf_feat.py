@@ -53,10 +53,6 @@ class CooccurenceTfidfFeat(BaseFeat):
             "query_id_description_unigram",
             "query_id_description_bigram",
         ]
-        ## feature names
-        self.feat_names = [name + "_tfidf" for name in self.column_names]
-        ## file to save feat names
-        self.feat_name_file = "%s/intersect_tfidf.feat_name" % config.feat_folder
 
         self.ngram_range = config.cooccurrence_tfidf_ngram_range
 
@@ -100,7 +96,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         df["query_id_description_unigram"] = list(df.apply(lambda x: cooccurrence_terms(["qid" + str(x["qid"])], x["description_unigram"], join_str), axis=1))
         df["query_id_description_bigram"] = list(df.apply(lambda x: cooccurrence_terms(["qid" + str(x["qid"])], x["description_bigram"], join_str), axis=1))
 
-    def gen_tfidf_svd_by_feat_column_names(self, path, dfTrain, dfTest, mode, ngram_range, feat_names, column_names):
+    def gen_tfidf_svd_by_feat_column_names(self, path, dfTrain, dfTest, mode, feat_names):
         """
         只提取feat_names这些特征
         :param dfTrain:
@@ -111,10 +107,11 @@ class CooccurenceTfidfFeat(BaseFeat):
         :param column_names:
         :return:
         """
-        for feat_name, column_name in zip(feat_names, column_names):
+        new_feat_names = []
+        for feat_name, column_name in zip(feat_names, self.column_names):
             print "generate %s feat" % feat_name
             ## tfidf
-            tfv = getTFV(ngram_range=ngram_range)
+            tfv = getTFV(ngram_range=self.ngram_range)
             X_tfidf_train = tfv.fit_transform(dfTrain[column_name])
             X_tfidf_test = tfv.transform(dfTest[column_name])
 
@@ -133,29 +130,13 @@ class CooccurenceTfidfFeat(BaseFeat):
                 cPickle.dump(X_svd_test, f, -1)
 
     def gen_coocurrence_tfidf_feat(self):
-
-        # cooccurrence terms column names
-        column_names = [
-            "query_unigram_title_unigram",
-            "query_unigram_title_bigram",
-            "query_unigram_description_unigram",
-            "query_unigram_description_bigram",
-
-            "query_bigram_title_unigram",
-            "query_bigram_title_bigram",
-            "query_bigram_description_unigram",
-            "query_bigram_description_bigram",
-
-            "query_id_title_unigram",
-            "query_id_title_bigram",
-            "query_id_description_unigram",
-            "query_id_description_bigram",
-        ]
+        """
+        cooccurrence terms column names
+        共24个特征 tfidf tfidf_individual_svd 各12个
+        :return:
+        """
         ## feature names
-        feat_names = [name + "_tfidf" for name in column_names]
-
-
-        ngram_range = config.cooccurrence_tfidf_ngram_range
+        feat_names = [name + "_tfidf" for name in self.column_names]
 
         svd_n_components = 100
 
@@ -187,21 +168,24 @@ class CooccurenceTfidfFeat(BaseFeat):
                 path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                 X_tfidf_train = dfTrain.iloc[trainInd]
                 X_tfidf_valid = dfTrain.iloc[validInd]
-                self.gen_tfidf_svd_by_feat_column_names(path, X_tfidf_train, X_tfidf_valid, "valid", ngram_range, feat_names,
-                                                        column_names)
+                self.gen_tfidf_svd_by_feat_column_names(path, X_tfidf_train, X_tfidf_valid, "valid", feat_names)
 
         print("Done.")
 
         # Re-training
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
-        self.gen_tfidf_svd_by_feat_column_names(path, dfTrain, dfTest, "test", ngram_range, feat_names, column_names)
-        feat_names += ["%s_individual_svd%d" % (f, svd_n_components) for f in feat_names]
+        self.gen_tfidf_svd_by_feat_column_names(path, dfTrain, dfTest, "test", feat_names)
         print("Done.")
 
+        # 记录所有的特征
+        new_feat_names = []
+        new_feat_names.extend(feat_names)
+        new_feat_names += ["%s_individual_svd%d" % (f, svd_n_components) for f in feat_names]
+
         # 保存所有的特征名字：intersect_tfidf.feat_name
-        feat_name_file = "%s/intersect_tfidf.feat_name" % config.solution_feat_combined
+        feat_name_file = "%s/cooccurrence_tfidf.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)
-        self.dump_feat_name(feat_names, feat_name_file)
+        self.dump_feat_name(new_feat_names, feat_name_file)
 
         print("All Done.")

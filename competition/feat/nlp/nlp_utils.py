@@ -24,6 +24,9 @@ from nltk import pos_tag
 from competition.feat.nlp.replacer import CsvWordReplacer
 import competition.conf.model_params_conf as config
 
+
+
+
 ################
 ## Stop Words ##
 ################
@@ -56,6 +59,9 @@ token_pattern = r"(?u)\b\w\w+\b"
 # token_pattern = r'\w{1,}'
 # token_pattern = r"\w+"
 # token_pattern = r"[\w']+"
+
+
+
 def pos_tag_text(line,
                  token_pattern=token_pattern,
                  exclude_stopword=config.cooccurrence_word_exclude_stopword,
@@ -144,6 +150,7 @@ def getBOW(token_pattern=token_pattern,
 ################
 ## synonym replacer
 replacer = CsvWordReplacer('%s/synonyms.csv' % config.data_folder)
+#replacer = CsvWordReplacer('../../Data/synonyms.csv')
 ## other replace dict
 ## such dict is found by exploring the training data
 replace_dict = {
@@ -252,3 +259,5 @@ def preprocess_data(line, token_pattern=token_pattern, exclude_stopword=config.c
     if exclude_stopword:
         tokens_stemmed = [x for x in tokens_stemmed if x not in stopwords]
     return tokens_stemmed
+
+
