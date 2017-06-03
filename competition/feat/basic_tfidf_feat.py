@@ -63,9 +63,9 @@ class BasicTfidfFeat(BaseFeat):
         self.stats_feat_num = len(quantiles_range) + len(self.stats_func)
         # tfidf bow两种
         self.vec_types = ["tfidf", "bow"]
-        # 1-3
+        # 1-3 元语法模型
         self.ngram_range = config.basic_tfidf_ngram_range
-        # 默认是"common"，有两种选择'common','dinididual'
+        # 默认是"common"，有两种选择'common','indididual'
         self.vocabulary_type = config.basic_tfidf_vocabulary_type
         # 主成分个数
         self.svd_n_components = [100, 150]
@@ -93,11 +93,13 @@ class BasicTfidfFeat(BaseFeat):
             d = 0.
         return d
 
-    ## generate distance stats feat
+    # generate distance stats feat
     def generate_dist_stats_feat(self, metric, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
         """
         生成距离状态特征，每一行是一个向量，计算行之间的距离
         相互距离的最小值，中位数、最大值、平均值、方差
+        如果qids_test不为空，则每个test和与他相同的qid的类别做比较
+
         :param metric: 距离度量标准 cosine/euclidean
         :param X_train:
         :param ids_train:
@@ -105,12 +107,14 @@ class BasicTfidfFeat(BaseFeat):
         :param ids_test:
         :param indices_dict:类别键值字典
         :param qids_test: 类别+qid键值字典
-        :return:  len(ids_test) 行 stats_feat_num*n_classes列的矩阵
+        :return:  len(ids_test) 行 stats_feat_num*n_classes列的矩阵---20个列
+        每行test-跟-某个类别的train 多对多距离，求距离的 五个统计指标
+
         stats_func ：全局函数
         stats_feat_num：全局
 
         """
-
+        # 生成距离矩阵
         if metric == "cosine":
             # 生成 len(ids_test)行，class(分类个数)列的 多维数组
             stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
@@ -147,21 +151,41 @@ class BasicTfidfFeat(BaseFeat):
                         stats_feat[i, j * self.stats_feat_num:(j + 1) * self.stats_feat_num] = feat
         return stats_feat
 
+    def create_vocabulary(self, dfTrain, vec_type):
+        """
+        根据vocabulary_type 生成
+        :param vocabulary_type:common  individual
+        :param vec_type:tfidf tfidf
+        :return:
+        """
+        # 生成 vocabulary
+        if self.vocabulary_type == "common":
+            if vec_type == "tfidf":
+                vec = getTFV(ngram_range=self.ngram_range)
+            elif vec_type == "bow":
+                vec = getBOW(ngram_range=self.ngram_range)
+            vec.fit(dfTrain["all_text"])
+            vocabulary = vec.vocabulary_
+        elif self.vocabulary_type == "individual":
+            vocabulary = None
+        return vocabulary
+
     def extract_bow_tfidf_cosine_sim_stats_feat(self, path, dfTrain, dfTest, feat_name, column_name, X_train, X_test, vec_type, mode, relevance_indices_dict, query_relevance_indices_dict):
         """
         bow/tfidf cosine sim stats feat
         :param path:
+        :param dfTrain 训练集
+        :param dfTest  验证集
         :param feat_name:
         :param column_name:
-        :param X_train:
-        :param X_test:
-        :param mode:
+        :param X_train: dfTrain 中column_name列transform后的向量
+        :param X_test:  dfTest 中column_name列transform后的向量
+        :param vec_type:["tfidf", "bow"]
+        :param mode: 'valid','test'
         :param relevance_indices_dict:
         :param query_relevance_indices_dict:
-        :param new_feat_names:
         :return:
-        vec_type:["tfidf", "bow"]
-        """
+         """
         # 方法生成的新特征名字
         new_feat_names = []
         if column_name in ["product_title", "product_description"]:
@@ -186,9 +210,47 @@ class BasicTfidfFeat(BaseFeat):
             new_feat_names.append("%s_cosine_sim_stats_feat_by_query_relevance" % feat_name)
             return new_feat_names
 
-    def extract_cosine_sim_feat(self, path, feat_names, mode, vec_type):
+    def gen_bow_tfidf_by_feat_column_names(self, path, dfTrain, dfTest, vec_type, mode, vocabulary, feat_names):
+        """
+        使用tdidf/bow transform 单个column_name 生成向量
+        :param vec_type:'tfidf'/'bow'
+        :param mode: 'valid' / 'test'
+        :param vocabulary:
+        :param relevance_indices_dict:
+        :param query_relevance_indices_dict:
+        :param feat_names:
+        :prarm columns:
+        :return:
+        """
+        new_feat_names = []
+        for feat_name, column_name in zip(feat_names, self.column_names):
+            # 根据 vec_type  bow/tfidf 生成不同的特征
+            if vec_type == "tfidf":
+                vec = getTFV(ngram_range=self.ngram_range, vocabulary=vocabulary)
+            elif vec_type == "bow":
+                vec = getBOW(ngram_range=self.ngram_range, vocabulary=vocabulary)
+            X_train = vec.fit_transform(dfTrain[column_name])
+            X_test = vec.transform(dfTest[column_name])
+            # 生成basic bow tfidf 特征
+            ##########################
+            print "generate %s feat for %s" % (vec_type, column_name)
+
+            with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
+                cPickle.dump(X_train, f, -1)
+            with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
+                cPickle.dump(X_test, f, -1)
+            # 基本的属性名字
+            new_feat_names.append(feat_name)
+            if feat_params_conf.stats_feat_flag:
+                feat_list = self.extract_bow_tfidf_cosine_sim_stats_feat(path, dfTrain, dfTest, feat_name, column_name, X_train, X_test, vec_type, mode, self.relevance_indices_dict, self.query_relevance_indices_dict)
+                new_feat_names.extend(feat_list)
+        return new_feat_names
+
+    @staticmethod
+    def extract_cosine_sim_feat(path, feat_names, mode, vec_type):
         """
         cosine sim feat
+        各特征之间的相似度
         :param path:
         :param feat_names:
             feat_names = ["query", "title", "description"]
@@ -259,7 +321,49 @@ class BasicTfidfFeat(BaseFeat):
 
         return new_feat_names
 
-    def extract_svd_cosine_sim_feat(self, path, feat_names, vec_type, mode, n_components):
+    def gen_common_svd_by_feat_column_names(self, path, dfTrain, dfTest, X_vec_all_train, n_components, vec_type, mode, feat_names):
+        """
+        使用svd transform  单个特征
+        :param path:
+        :param dfTrain:
+        :param dfTest:
+        :param X_vec_all_train:所有特征vstack到一起
+        :param n_components:
+        :param vec_type:
+        :param mode:
+        :param feat_names:
+        :return:
+        """
+        new_feat_names = []
+        svd = TruncatedSVD(n_components=n_components, n_iter=15)
+        svd.fit(X_vec_all_train)
+        for feat_name, column_name in zip(feat_names, self.column_names):
+            print "generate common %s-svd%d feat for %s" % (vec_type, n_components, column_name)
+            # 生成common svd 特征
+            with open("%s/train.%s.feat.pkl" % (path, feat_name), "rb") as f:
+                X_vec_train = cPickle.load(f)
+            with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "rb") as f:
+                X_vec_test = cPickle.load(f)
+            X_svd_train = svd.transform(X_vec_train)
+            X_svd_test = svd.transform(X_vec_test)
+            with open("%s/train.%s_common_svd%d.feat.pkl" % (path, feat_name, n_components), "wb") as f:
+                cPickle.dump(X_svd_train, f, -1)
+            with open("%s/%s.%s_common_svd%d.feat.pkl" % (path, mode, feat_name, n_components), "wb") as f:
+                cPickle.dump(X_svd_test, f, -1)
+            ## update feat names
+            new_feat_names.append("%s_common_svd%d" % (feat_name, n_components))
+
+            if feat_params_conf.stats_feat_flag:
+                #####################################
+                ## bow/tfidf-svd cosine sim stats feat ##
+                #####################################
+                feat_list = self.extract_svd_cosine_sim_stats_feat(path, dfTrain, dfTest, feat_name, column_name, X_svd_train, X_svd_test, mode, n_components, self.relevance_indices_dict,
+                                                                   self.query_relevance_indices_dict)
+                new_feat_names.extend(feat_list)
+        return new_feat_names
+
+    @staticmethod
+    def extract_svd_cosine_sim_feat(path, feat_names, vec_type, mode, n_components):
         """
         svd cosine sim feat
         :param path:
@@ -334,99 +438,6 @@ class BasicTfidfFeat(BaseFeat):
 
         return new_feat_names
 
-    def create_vocabulary(self, dfTrain, vec_type):
-        """
-        根据vocabulary_type 生成
-        :param vocabulary_type:common  individual
-        :param vec_type:tfidf tfidf
-        :return:
-        """
-        # 生成 vocabulary
-        if self.vocabulary_type == "common":
-            if vec_type == "tfidf":
-                vec = getTFV(ngram_range=self.ngram_range)
-            elif vec_type == "bow":
-                vec = getBOW(ngram_range=self.ngram_range)
-            vec.fit(dfTrain["all_text"])
-            vocabulary = vec.vocabulary_
-        elif self.vocabulary_type == "individual":
-            vocabulary = None
-        return vocabulary
-
-    def gen_bow_tfidf_by_feat_column_names(self, path, dfTrain, dfTest, vec_type, mode, vocabulary, feat_names):
-        """
-        根据vec_type mode vocabulary 生成
-        :param vec_type:'tfidf'/'bow'
-        :param mode: 'valid' / 'test'
-        :param vocabulary:
-        :param relevance_indices_dict:
-        :param query_relevance_indices_dict:
-        :param feat_names:
-        :prarm columns:
-        :return:
-        """
-        new_feat_names = []
-        for feat_name, column_name in zip(feat_names, self.column_names):
-            # 根据 vec_type  bow/tfidf 生成不同的特征
-            if vec_type == "tfidf":
-                vec = getTFV(ngram_range=self.ngram_range, vocabulary=vocabulary)
-            elif vec_type == "bow":
-                vec = getBOW(ngram_range=self.ngram_range, vocabulary=vocabulary)
-            X_train = vec.fit_transform(dfTrain[column_name])
-            X_test = vec.transform(dfTest[column_name])
-            # 生成basic bow tfidf 特征
-            ##########################
-            print "generate %s feat for %s" % (vec_type, column_name)
-
-            with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
-                cPickle.dump(X_train, f, -1)
-            with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
-                cPickle.dump(X_test, f, -1)
-            # 基本的属性名字
-            new_feat_names.append(feat_name)
-            if feat_params_conf.stats_feat_flag:
-                feat_list = self.extract_bow_tfidf_cosine_sim_stats_feat(path, dfTrain, dfTest, feat_name, column_name, X_train, X_test, vec_type, mode, self.relevance_indices_dict, self.query_relevance_indices_dict)
-                new_feat_names.extend(feat_list)
-        return new_feat_names
-
-    def gen_common_svd_by_feat_column_names(self, path, dfTrain, dfTest, X_vec_all_train, n_components, vec_type, mode, feat_names):
-        """
-
-        :param X_vec_all_train:
-        :param n_components:
-        :param mode:
-        :param relevance_indices_dict:
-        :param query_relevance_indices_dict:
-        :return:
-        """
-        new_feat_names = []
-        svd = TruncatedSVD(n_components=n_components, n_iter=15)
-        svd.fit(X_vec_all_train)
-        for feat_name, column_name in zip(feat_names, self.column_names):
-            print "generate common %s-svd%d feat for %s" % (vec_type, n_components, column_name)
-            # 生成common svd 特征
-            with open("%s/train.%s.feat.pkl" % (path, feat_name), "rb") as f:
-                X_vec_train = cPickle.load(f)
-            with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "rb") as f:
-                X_vec_test = cPickle.load(f)
-            X_svd_train = svd.transform(X_vec_train)
-            X_svd_test = svd.transform(X_vec_test)
-            with open("%s/train.%s_common_svd%d.feat.pkl" % (path, feat_name, n_components), "wb") as f:
-                cPickle.dump(X_svd_train, f, -1)
-            with open("%s/%s.%s_common_svd%d.feat.pkl" % (path, mode, feat_name, n_components), "wb") as f:
-                cPickle.dump(X_svd_test, f, -1)
-            ## update feat names
-            new_feat_names.append("%s_common_svd%d" % (feat_name, n_components))
-
-            if feat_params_conf.stats_feat_flag:
-                #####################################
-                ## bow/tfidf-svd cosine sim stats feat ##
-                #####################################
-                feat_list = self.extract_svd_cosine_sim_stats_feat(path, dfTrain, dfTest, feat_name, column_name, X_svd_train, X_svd_test, mode, n_components, self.relevance_indices_dict,
-                                                                   self.query_relevance_indices_dict)
-                new_feat_names.extend(feat_list)
-        return new_feat_names
-
     def gen_individual_svd_by_feat_column_names(self, path, dfTrain, dfTest, n_components, vec_type, mode, feat_names):
         """
         generate individual svd feat
@@ -461,7 +472,7 @@ class BasicTfidfFeat(BaseFeat):
                                                                   n_components, self.relevance_indices_dict, self.query_relevance_indices_dict, new_feat_names)
         return new_feat_names
 
-    def extract_feat(self, path, dfTrain, dfTest, vec_type, mode, feat_names):
+    def gen_feat(self, path, dfTrain, dfTest, vec_type, mode, feat_names):
         """
         extract all features
         1.fit a bow/tfidf on the all_text to get
@@ -490,7 +501,7 @@ class BasicTfidfFeat(BaseFeat):
         new_feat_names.extend(feat_list)
 
         # cosine sim feat
-        feat_list = self.extract_cosine_sim_feat(path, feat_names, mode, vec_type)
+        feat_list = BasicTfidfFeat.extract_cosine_sim_feat(path, feat_names, mode, vec_type)
         new_feat_names.extend(feat_list)
 
         #vstack 所有的feat
@@ -506,7 +517,7 @@ class BasicTfidfFeat(BaseFeat):
             feat_list = self.gen_common_svd_by_feat_column_names(path, dfTrain, dfTest, X_vec_all_train, n_components, vec_type, mode, feat_names)
             new_feat_names.extend(feat_list)
             #cosine sim feat ##
-            feat_list = self.extract_svd_cosine_sim_feat(path, feat_names, vec_type, mode, n_components)
+            feat_list = BasicTfidfFeat.extract_svd_cosine_sim_feat(path, feat_names, vec_type, mode, n_components)
             new_feat_names.extend(feat_list)
 
             feat_list = self.gen_individual_svd_by_feat_column_names(path, dfTrain, dfTest, n_components, vec_type, mode, feat_names)
@@ -514,7 +525,7 @@ class BasicTfidfFeat(BaseFeat):
 
         return new_feat_names
 
-    def gen_basic_tfidf_feat(self):
+    def cv_gen_feat(self):
         """
         入口函数
         共22个属性
@@ -557,14 +568,14 @@ class BasicTfidfFeat(BaseFeat):
                     path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                     dfTrain_train_train = df_train.iloc[trainInd].copy()
                     dfTrain_train_valid = df_train.iloc[validInd].copy()
-                    self.extract_feat(path, dfTrain_train_train, dfTrain_train_valid, vec_type, "valid", feat_names)
+                    self.gen_feat(path, dfTrain_train_train, dfTrain_train_valid, vec_type, "valid", feat_names)
 
             print("Done.")
 
             print("For training and testing...")
             path = "%s/All" % config.solution_feat_base
             # 返回抽取的特征名字
-            added_feat_names = self.extract_feat(path, df_train, df_test, vec_type, "test", feat_names)
+            added_feat_names = self.gen_feat(path, df_train, df_test, vec_type, "test", feat_names)
             new_feat_names.extend(added_feat_names)
 
         # 保存所有的文件名字

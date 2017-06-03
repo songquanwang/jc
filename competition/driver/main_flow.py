@@ -58,19 +58,18 @@ def gen_feat():
     # 生成所有的特征+label
     # 生成basic tfidf feat
     basic_tfidf_feat = BasicTfidfFeat()
-    basic_tfidf_feat.gen_basic_tfidf_feat()
+    basic_tfidf_feat.cv_gen_feat()
     # 生成coocrrence tfidf feat
     cooccurence_tfidf_feat = CooccurenceTfidfFeat()
-    cooccurence_tfidf_feat.gen_coocurrence_tfidf_feat()
+    cooccurence_tfidf_feat.cv_gen_feat()
     # 生成 counting feat
     counting_feat = CountingFeat()
-    counting_feat.gen_counting_feat()
+    counting_feat.cv_gen_feat()
     # 生成 distance feat
     distance_feat = DistanceFeat()
-    distance_feat.gen_distance_feat()
-    # 生成id feat
+    distance_feat.cv_gen_feat()
     id_feat = IdFeat()
-    id_feat.gen_id_feat()
+    id_feat.cv_gen_feat()
 
     # 合并所有的feat 生成四个目录，文件名字 train.feat valid.feat test.feat
     BaseFeat.combine_feat(LSA_and_stats_feat_Jun09_Low.feat_names, feat_path_name="LSA_and_stats_feat_Jun09")

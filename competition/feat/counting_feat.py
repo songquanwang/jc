@@ -59,6 +59,7 @@ class CountingFeat(BaseFeat):
                 pos_of_obs_in_target = [0]
         return pos_of_obs_in_target
 
+    @staticmethod
     def extract_digit_count_feat(self, df, feat_names, grams):
         """
          word count and digit count 22个 +1
@@ -77,14 +78,15 @@ class CountingFeat(BaseFeat):
                 df["count_of_unique_%s_%s" % (feat_name, gram)] = list(df.apply(lambda x: len(set(x[feat_name + "_" + gram])), axis=1))
                 df["ratio_of_unique_%s_%s" % (feat_name, gram)] = map(utils.try_divide, df["count_of_unique_%s_%s" % (feat_name, gram)], df["count_of_%s_%s" % (feat_name, gram)])
 
-            ## digit count
+            # digit count
             df["count_of_digit_in_%s" % feat_name] = list(df.apply(lambda x: count_digit(x[feat_name + "_unigram"]), axis=1))
             df["ratio_of_digit_in_%s" % feat_name] = map(utils.try_divide, df["count_of_digit_in_%s" % feat_name], df["count_of_%s_unigram" % (feat_name)])
 
         ## description missing indicator
         df["description_missing"] = list(df.apply(lambda x: int(x["description_unigram"] == ""), axis=1))
 
-    def extract_interset_digit_count_feat(self, df, feat_names, grams):
+    @staticmethod
+    def extract_interset_digit_count_feat(df, feat_names, grams):
         """
         intersect word count 48个
         :param df:
@@ -108,7 +110,8 @@ class CountingFeat(BaseFeat):
             df["description_%s_in_query_div_query_%s" % (gram, gram)] = map(utils.try_divide, df["count_of_description_%s_in_query" % gram], df["count_of_query_%s" % gram])
             df["description_%s_in_query_div_query_%s_in_description" % (gram, gram)] = map(utils.try_divide, df["count_of_description_%s_in_query" % gram], df["count_of_query_%s_in_description" % gram])
 
-    def extract_interset_word_pos_feat(self, df, feat_names, grams):
+    @staticmethod
+    def extract_interset_word_pos_feat( df, feat_names, grams):
         """
         intersect word position feat
         :param df:
@@ -156,15 +159,15 @@ class CountingFeat(BaseFeat):
         # word count and digit count
         print "generate word counting features"
         # 计算包含数字的个数
-        self.extract_digit_count_feat(df, feat_names, grams)
+        CountingFeat.extract_digit_count_feat(df, feat_names, grams)
         # intersect word count
         print "generate intersect word counting features"
-        self.extract_interset_digit_count_feat(df, feat_names, grams)
+        CountingFeat.extract_interset_digit_count_feat(df, feat_names, grams)
         # intersect word position feat
         print "generate intersect word position features"
-        self.extract_interset_word_pos_feat(df, feat_names, grams)
+        CountingFeat.extract_interset_word_pos_feat(df, feat_names, grams)
 
-    def gen_count_pos_by_feat_names(self, path, dfTrain, dfTest, mode, feat_names):
+    def gen_feat(self, path, dfTrain, dfTest, mode, feat_names):
         """
         只提取feat_names这些特征
         :param dfTrain:
@@ -181,7 +184,7 @@ class CountingFeat(BaseFeat):
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
-    def gen_counting_feat(self):
+    def cv_gen_feat(self):
         """
 
         :return:
@@ -199,8 +202,8 @@ class CountingFeat(BaseFeat):
         print("Generate counting features...")
 
         # 生成临时特征
-        self.gen_temp_feat(dfTrain)
-        self.gen_temp_feat(dfTest)
+        self.gen_column_gram(dfTrain)
+        self.gen_column_gram(dfTest)
         # 生成其他特征
         self.extract_feat(dfTrain)
         self.extract_feat(dfTest)
@@ -222,13 +225,13 @@ class CountingFeat(BaseFeat):
                 path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                 X_train_train = dfTrain.iloc[trainInd]
                 X_train_valid = dfTrain.iloc[validInd]
-                self.gen_count_pos_by_feat_names(path, X_train_train, X_train_valid, "valid", feat_names)
+                self.gen_feat(path, X_train_train, X_train_valid, "valid", feat_names)
         print("Done.")
 
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
         # use full version for X_train
-        self.gen_count_pos_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
+        self.gen_feat(path, dfTrain, dfTest, "test", feat_names)
 
         # 保存所有的特征名字：counting.feat_name
         new_feat_names = feat_names

@@ -76,7 +76,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         res = " ".join(terms)
         return res
 
-    def extract_feat(self, df):
+    def gen_cooccurrence_column(self, df):
         cooccurrence_terms = CooccurenceTfidfFeat.cooccurrence_terms
         ## cooccurrence terms
         join_str = "X"
@@ -96,7 +96,7 @@ class CooccurenceTfidfFeat(BaseFeat):
         df["query_id_description_unigram"] = list(df.apply(lambda x: cooccurrence_terms(["qid" + str(x["qid"])], x["description_unigram"], join_str), axis=1))
         df["query_id_description_bigram"] = list(df.apply(lambda x: cooccurrence_terms(["qid" + str(x["qid"])], x["description_bigram"], join_str), axis=1))
 
-    def gen_tfidf_svd_by_feat_column_names(self, path, dfTrain, dfTest, mode, feat_names):
+    def gen_feat(self, path, dfTrain, dfTest, mode, feat_names):
         """
         只提取feat_names这些特征
         :param dfTrain:
@@ -129,7 +129,7 @@ class CooccurenceTfidfFeat(BaseFeat):
             with open("%s/%s.%s_individual_svd%d.feat.pkl" % (path, mode, feat_name, self.svd_n_components), "wb") as f:
                 cPickle.dump(X_svd_test, f, -1)
 
-    def gen_coocurrence_tfidf_feat(self):
+    def gen_feat(self):
         """
         cooccurrence terms column names
         共24个特征 tfidf tfidf_individual_svd 各12个
@@ -153,11 +153,11 @@ class CooccurenceTfidfFeat(BaseFeat):
         print("Generate co-occurrence tfidf features...")
 
         # gen temp feat
-        self.gen_temp_feat(dfTrain)
-        self.gen_temp_feat(dfTest)
+        self.gen_column_gram(dfTrain)
+        self.gen_column_gram(dfTest)
         # get cooccurrence terms
-        self.extract_feat(dfTrain)
-        self.extract_feat(dfTest)
+        self.gen_cooccurrence_column(dfTrain)
+        self.gen_cooccurrence_column(dfTest)
 
         # Cross validation
         print("For cross-validation...")
@@ -168,14 +168,14 @@ class CooccurenceTfidfFeat(BaseFeat):
                 path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                 X_tfidf_train = dfTrain.iloc[trainInd]
                 X_tfidf_valid = dfTrain.iloc[validInd]
-                self.gen_tfidf_svd_by_feat_column_names(path, X_tfidf_train, X_tfidf_valid, "valid", feat_names)
+                self.gen_feat(path, X_tfidf_train, X_tfidf_valid, "valid", feat_names)
 
         print("Done.")
 
         # Re-training
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
-        self.gen_tfidf_svd_by_feat_column_names(path, dfTrain, dfTest, "test", feat_names)
+        self.gen_feat(path, dfTrain, dfTest, "test", feat_names)
         print("Done.")
 
         # 记录所有的特征

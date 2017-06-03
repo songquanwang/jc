@@ -148,25 +148,7 @@ class DistanceFeat(BaseFeat):
         :param df:
         :return:
         """
-        ## unigram
-        print "generate unigram"
-        df["query_unigram"] = list(df.apply(lambda x: preprocess_data(x["query"]), axis=1))
-        df["title_unigram"] = list(df.apply(lambda x: preprocess_data(x["product_title"]), axis=1))
-        df["description_unigram"] = list(df.apply(lambda x: preprocess_data(x["product_description"]), axis=1))
-        ## bigram
-        print "generate bigram"
-        join_str = "_"
-        df["query_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["query_unigram"], join_str), axis=1))
-        df["title_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["title_unigram"], join_str), axis=1))
-        df["description_bigram"] = list(df.apply(lambda x: ngram.getBigram(x["description_unigram"], join_str), axis=1))
-        ## trigram
-        print "generate trigram"
-        join_str = "_"
-        df["query_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["query_unigram"], join_str), axis=1))
-        df["title_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["title_unigram"], join_str), axis=1))
-        df["description_trigram"] = list(df.apply(lambda x: ngram.getTrigram(x["description_unigram"], join_str), axis=1))
-
-        ## jaccard coef/dice dist of n-gram
+        # jaccard coef/dice dist of n-gram
         print "generate jaccard coef and dice dist for n-gram"
         dists = ["jaccard_coef", "dice_dist"]
         grams = ["unigram", "bigram", "trigram"]
@@ -230,7 +212,7 @@ class DistanceFeat(BaseFeat):
 
         return new_feat_names
 
-    def gen_distance_by_feat_names(self, path, dfTrain, dfTest, mode, feat_names):
+    def gen_feat(self, path, dfTrain, dfTest, mode, feat_names):
         new_feat_names = []
         for feat_name in feat_names:
             X_train = dfTrain[feat_name]
@@ -249,7 +231,7 @@ class DistanceFeat(BaseFeat):
                 new_feat_names.extend(added_feat_names)
         return new_feat_names
 
-    def gen_distance_feat(self):
+    def cv_gen_feat(self):
         """
 
         :return:
@@ -271,8 +253,8 @@ class DistanceFeat(BaseFeat):
         print("==================================================")
         print("Generate distance features...")
 
-        self.gen_temp_feat(dfTrain)
-        self.gen_temp_feat(dfTest)
+        self.gen_column_gram(dfTrain)
+        self.gen_column_gram(dfTest)
         DistanceFeat.extract_basic_distance_feat(dfTrain)
         ## use full version for X_train
         DistanceFeat.extract_basic_distance_feat(dfTest)
@@ -288,14 +270,14 @@ class DistanceFeat(BaseFeat):
 
                 X_train_train = dfTrain.iloc[trainInd]
                 X_train_valid = dfTrain.iloc[validInd]
-                self.gen_distance_by_feat_names(path, X_train_train, X_train_valid, "valid", feat_names)
+                self.gen_feat(path, X_train_train, X_train_valid, "valid", feat_names)
 
         print("Done.")
 
         print("For training and testing...")
         path = "%s/All" % config.solution_feat_base
 
-        added_feat_names = self.gen_distance_by_feat_names(path, dfTrain, dfTest, "test", feat_names)
+        added_feat_names = self.gen_feat(path, dfTrain, dfTest, "test", feat_names)
 
         # 保存所有的特征名字 ：distance.feat_name
         new_feat_names = []

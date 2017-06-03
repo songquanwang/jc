@@ -43,7 +43,7 @@ class IdFeat(BaseFeat):
                 cPickle.dump(X_valid, f, -1)
 
     @staticmethod
-    def gen_id_feat_all(id_names, dfTrain, dfTest, lb):
+    def gen_feat(id_names, dfTrain, dfTest, lb):
         path = "%s/All" % config.solution_feat_base
         ## use full version for X_train
         for id_name in id_names:
@@ -54,7 +54,7 @@ class IdFeat(BaseFeat):
             with open("%s/test.%s.feat.pkl" % (path, id_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
-    def gen_id_feat(self):
+    def cv_gen_feat(self):
         """
         入口函数
         :return:
@@ -79,7 +79,7 @@ class IdFeat(BaseFeat):
             for fold, (validInd, trainInd) in enumerate(skf[run]):
                 print("Run: %d, Fold: %d" % (run + 1, fold + 1))
                 # 生成 run fold
-                self.gen_id_feat_run_fold(id_names, run, fold, dfTrain, trainInd, validInd, lb)
+                self.gen_feat(id_names, run, fold, dfTrain, trainInd, validInd, lb)
 
         print("Done.")
 
@@ -89,6 +89,6 @@ class IdFeat(BaseFeat):
 
         # 保存特征文件
         feat_name_file = "%s/id.feat_name" % (config.solution_feat_combined)
-        self.dump_feat_name(id_names, feat_name_file)
+        self.gen_feat(id_names, feat_name_file)
 
         print("All Done.")
