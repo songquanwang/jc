@@ -2,9 +2,9 @@
 __author__ = 'songquanwang'
 import os
 
-from hyperopt import fmin, tpe, Trials
 import numpy as np
 
+from hyperopt import fmin, tpe, Trials
 from competition.models.gbdt.gbdt_model_imp import GbdtModelImp
 from competition.models.keras.keras_dnn_model_imp import KerasDnnModelImp
 from competition.models.libfm.libfm_model_imp import LibfmModelImp
@@ -33,22 +33,25 @@ def create_model(param_space, info_folder, feat_folder, feat_name):
     elif param_space["task"] in ["reg_keras_dnn"]:
         return RgfModelImp(param_space, info_folder, feat_folder, feat_name)
     else:
-        raise Exception('暂时不支持改模型!')
+        raise Exception('暂时不支持该模型!')
 
 
-def make_predict_by_models(specified_models):
+def make_opt_predict_by_models(specified_models):
     """
     使用指定的模型预测结果
+    所有尝试的参数均记录在文件中
     :param specified_models:
     :return:best_kappa_mean, best_kappa_std
     """
     log_path = "%s/Log" % config.output_path
     if not os.path.exists(log_path):
         os.makedirs(log_path)
+    models_best_params = []
     # 判断传入参数中的models是不是已经配置的models
     for feat_name in specified_models:
         if feat_name not in model_library_config.feat_names:
             continue
+        # param space ,模型内部也需要（打日志头部)
         feat_folder, param_space = model_library_config.model_config[feat_name]
         model = create_model(param_space, config.solution_info, feat_folder, feat_name)
         model.log_header()
@@ -76,4 +79,7 @@ def make_predict_by_models(specified_models):
         best_kappa_std = trials.trial_attachments(trials.trials[ind])['std']
         print("Kappa stats")
         print("Mean: %.6f\n        Std: %.6f" % (best_kappa_mean, best_kappa_std))
-        return best_kappa_mean, best_kappa_std
+
+        models_best_params.append((feat_name, best_kappa_mean, best_kappa_std))
+
+    return models_best_params

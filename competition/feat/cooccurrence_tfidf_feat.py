@@ -129,7 +129,7 @@ class CooccurenceTfidfFeat(BaseFeat):
             with open("%s/%s.%s_individual_svd%d.feat.pkl" % (path, mode, feat_name, self.svd_n_components), "wb") as f:
                 cPickle.dump(X_svd_test, f, -1)
 
-    def gen_feat(self):
+    def gen_feat_cv(self):
         """
         cooccurrence terms column names
         共24个特征 tfidf tfidf_individual_svd 各12个

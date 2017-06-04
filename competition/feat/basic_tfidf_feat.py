@@ -93,63 +93,15 @@ class BasicTfidfFeat(BaseFeat):
             d = 0.
         return d
 
-    # generate distance stats feat
-    def generate_dist_stats_feat(self, metric, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
-        """
-        生成距离状态特征，每一行是一个向量，计算行之间的距离
-        相互距离的最小值，中位数、最大值、平均值、方差
-        如果qids_test不为空，则每个test和与他相同的qid的类别做比较
-
-        :param metric: 距离度量标准 cosine/euclidean
-        :param X_train:
-        :param ids_train:
-        :param X_test:
-        :param ids_test:
-        :param indices_dict:类别键值字典
-        :param qids_test: 类别+qid键值字典
-        :return:  len(ids_test) 行 stats_feat_num*n_classes列的矩阵---20个列
-        每行test-跟-某个类别的train 多对多距离，求距离的 五个统计指标
-
-        stats_func ：全局函数
-        stats_feat_num：全局
-
-        """
-        # 生成距离矩阵
-        if metric == "cosine":
-            # 生成 len(ids_test)行，class(分类个数)列的 多维数组
-            stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
+    @staticmethod
+    def pairwise_dist(X_test, X_train, dist_metric):
+        if dist_metric == "cosine":
             # sim 0-1 1完全相同
-            sim = 1. - pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
-        elif metric == "euclidean":
-            stats_feat = -1 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
+            sim = 1. - pairwise_distances(X_test, X_train, metric=dist_metric, n_jobs=1)
+        elif dist_metric == "euclidean":
             # 返回xtest行 xtrain列的array
-            sim = pairwise_distances(X_test, X_train, metric=metric, n_jobs=1)
-
-        for i in range(len(ids_test)):
-            id = ids_test[i]
-            if qids_test is not None:
-                qid = qids_test[i]
-            # 一行分别于某一类的距离做比较
-            for j in range(config.num_of_class):
-                # if赋值语句
-                key = (qid, j + 1) if qids_test is not None else j + 1
-                if indices_dict.has_key(key):
-                    inds = indices_dict[key]
-                    # exclude this sample itself from the list of indices
-
-                    inds = [ind for ind in inds if id != ids_train[ind]]
-                    sim_tmp = sim[i][inds]
-                    if len(sim_tmp) != 0:
-                        # 距离的平均值、方差
-                        feat = [func(sim_tmp) for func in self.stats_func]
-                        ## quantile
-                        sim_tmp = pd.Series(sim_tmp)
-                        # 距离的最小值、中位数、最大值
-                        quantiles = sim_tmp.quantile(self.quantiles_range)
-                        feat = np.hstack((feat, quantiles))
-                        # 每一行生成 [五个值的数组]
-                        stats_feat[i, j * self.stats_feat_num:(j + 1) * self.stats_feat_num] = feat
-        return stats_feat
+            sim = pairwise_distances(X_test, X_train, metric=dist_metric, n_jobs=1)
+        return sim
 
     def create_vocabulary(self, dfTrain, vec_type):
         """
@@ -525,7 +477,7 @@ class BasicTfidfFeat(BaseFeat):
 
         return new_feat_names
 
-    def cv_gen_feat(self):
+    def gen_feat_cv(self):
         """
         入口函数
         共22个属性

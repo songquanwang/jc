@@ -54,7 +54,7 @@ class IdFeat(BaseFeat):
             with open("%s/test.%s.feat.pkl" % (path, id_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
-    def cv_gen_feat(self):
+    def gen_feat_cv(self):
         """
         入口函数
         :return:

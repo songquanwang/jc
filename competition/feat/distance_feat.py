@@ -77,6 +77,13 @@ class DistanceFeat(BaseFeat):
 
     @staticmethod
     def compute_dist(A, B, dist="jaccard_coef"):
+        """
+        jaccard 、dice距离
+        :param A:
+        :param B:
+        :param dist:
+        :return:
+        """
         if dist == "jaccard_coef":
             d = DistanceFeat.JaccardCoef(A, B)
         elif dist == "dice_dist":
@@ -92,6 +99,7 @@ class DistanceFeat(BaseFeat):
                 coef[i, j] = DistanceFeat.JaccardCoef(A[i], B[j])
         return coef
 
+    @staticmethod
     def pairwise_dice_dist(A, B):
         d = np.zeros((A.shape[0], B.shape[0]), dtype=float)
         for i in range(A.shape[0]):
@@ -99,47 +107,20 @@ class DistanceFeat(BaseFeat):
                 d[i, j] = DistanceFeat.DiceDist(A[i], B[j])
         return d
 
+    @staticmethod
     def pairwise_dist(A, B, dist="jaccard_coef"):
+        """
+        批量 jaccard 、dice距离
+        :param A:
+        :param B:
+        :param dist:
+        :return:
+        """
         if dist == "jaccard_coef":
             d = DistanceFeat.pairwise_jaccard_coef(A, B)
         elif dist == "dice_dist":
             d = DistanceFeat.pairwise_dice_dist(A, B)
         return d
-
-    def generate_dist_stats_feat(self, dist, X_train, ids_train, X_test, ids_test, indices_dict, qids_test=None):
-        """
-        Extract statistical distance feature
-        :param dist:
-        :param X_train:
-        :param ids_train:
-        :param X_test:
-        :param ids_test:
-        :param indices_dict:
-        :param qids_test:
-        :return:
-        """
-        stats_feat = 0 * np.ones((len(ids_test), self.stats_feat_num * config.num_of_class), dtype=float)
-        ## pairwise dist
-        distance = DistanceFeat.pairwise_dist(X_test, X_train, dist)
-        for i in range(len(ids_test)):
-            id = ids_test[i]
-            if qids_test is not None:
-                qid = qids_test[i]
-            for j in range(config.num_of_class):
-                key = (qid, j + 1) if qids_test is not None else j + 1
-                if indices_dict.has_key(key):
-                    inds = indices_dict[key]
-                    # exclude this sample itself from the list of indices
-                    inds = [ind for ind in inds if id != ids_train[ind]]
-                    distance_tmp = distance[i][inds]
-                    if len(distance_tmp) != 0:
-                        feat = [func(distance_tmp) for func in self.stats_func]
-                        ## quantile
-                        distance_tmp = pd.Series(distance_tmp)
-                        quantiles = distance_tmp.quantile(self.quantiles_range)
-                        feat = np.hstack((feat, quantiles))
-                        stats_feat[i, j * self.stats_feat_num:(j + 1) * self.stats_feat_num] = feat
-        return stats_feat
 
     @staticmethod
     def extract_basic_distance_feat(df):
@@ -152,6 +133,7 @@ class DistanceFeat(BaseFeat):
         print "generate jaccard coef and dice dist for n-gram"
         dists = ["jaccard_coef", "dice_dist"]
         grams = ["unigram", "bigram", "trigram"]
+        # 计算 queyr title description的 jaccard dice距离
         feat_names = ["query", "title", "description"]
         for dist in dists:
             for gram in grams:
@@ -231,7 +213,7 @@ class DistanceFeat(BaseFeat):
                 new_feat_names.extend(added_feat_names)
         return new_feat_names
 
-    def cv_gen_feat(self):
+    def gen_feat_cv(self):
         """
 
         :return:
@@ -281,6 +263,7 @@ class DistanceFeat(BaseFeat):
 
         # 保存所有的特征名字 ：distance.feat_name
         new_feat_names = []
+        new_feat_names.extend(feat_names)
         new_feat_names.extend(added_feat_names)
         feat_name_file = "%s/distance.feat_name" % config.solution_feat_combined
         print("Feature names are stored in %s" % feat_name_file)

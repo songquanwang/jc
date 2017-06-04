@@ -7,10 +7,10 @@ import csv
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_svmlight_file
+
 import xgboost as xgb
 from hyperopt import STATUS_OK
 from scipy.sparse import hstack
-
 import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 import competition.conf.model_library_config as config
@@ -63,7 +63,7 @@ class BaseModel(object):
         subm_path = "%s/Subm" % model_param_conf.output_path
         raw_pred_test_path = "%s/test.raw.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
         rank_pred_test_path = "%s/test.pred.%s_[Id@%d].csv" % (save_path, feat_name, trial_counter)
-        # submission path (relevance as in [1,2,3,4])
+        # submission path (relevance as in [1,2,3,4]) 整合时候好像没用到
         subm_path = "%s/test.pred.%s_[Id@%d]_[Mean%.6f]_[Std%.6f].csv" % (subm_path, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
 
         return raw_pred_test_path, rank_pred_test_path, subm_path
@@ -181,20 +181,20 @@ class BaseModel(object):
     def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank):
 
         raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
-        ## write
+        # write
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
         output.to_csv(raw_pred_test_path, index=False)
 
-        ## write
+        # write
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_rank})
         output.to_csv(rank_pred_test_path, index=False)
 
-        ## write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
+        # write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
         pred_score = utils.getScore(pred_raw, self.cdf_test)
         output = pd.DataFrame({"id": self.id_test, "prediction": pred_score})
         output.to_csv(subm_path, index=False)
 
-    def gen_bagging(self, set_obj, all):
+    def gen_bagging(self, param, set_obj, all):
         """
         分袋整合预测结果
         :param set_obj:
@@ -204,7 +204,7 @@ class BaseModel(object):
         preds_bagging = np.zeros((self.numTest, model_param_conf.bagging_size), dtype=float)
         for n in range(model_param_conf.bagging_size):
             # 调用 每个子类的train_predict方法，多态
-            pred = self.train_predict(self, set_obj, all)
+            pred = self.train_predict(self, param, set_obj, all)
             pred_test = pred
             preds_bagging[:, n] = pred_test
             if not all:
@@ -237,7 +237,7 @@ class BaseModel(object):
                 # 生成 run_fold_set_obj
                 set_obj = self.gen_set_obj_run_fold(self, run, fold)
                 # bagging结果
-                pred_raw, pred_rank, kappa_valid = self.gen_bagging(self, set_obj, all=False)
+                pred_raw, pred_rank, kappa_valid = self.gen_bagging(self, param, set_obj, all=False)
                 # 输出文件
                 kappa_cv[run - 1, fold - 1] = kappa_valid
                 # 生成没run fold的结果
@@ -245,16 +245,29 @@ class BaseModel(object):
         # kappa_cv run*fold*bagging_size 均值和方差
         kappa_cv_mean, kappa_cv_std = np.mean(kappa_cv), np.std(kappa_cv)
         if model_param_conf.verbose_level >= 1:
-            print("              Mean: %.6f" % kappa_cv_mean)
-            print("              Std: %.6f" % kappa_cv_std)
-        # # bagging结果
-        pred_raw, pred_rank = self.gen_bagging(self, set_obj, all=True)
+            print(" Mean: %.6f" % kappa_cv_mean)
+            print(" Std: %.6f" % kappa_cv_std)
+        # bagging结果
+        pred_raw, pred_rank = self.gen_bagging(self, param, set_obj, all=True)
         # 生成提交结果
         self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank)
         # 记录参数文件
         self.log_param(param, feat_name, kappa_cv_mean, kappa_cv_std)
         # 根据交叉验证的平均值作为模型好坏标准
         return {'loss': -kappa_cv_mean, 'attachments': {'std': kappa_cv_std}, 'status': STATUS_OK}
+
+    def log_header(self):
+        """
+        log 记录文件头部
+        :return:
+        """
+        # 记录日志 到output/***_hyperopt.log
+        # 每行日志都包含 'trial_counter', 'kappa_mean', 'kappa_std' 三个字段 + 模型参数
+        headers = ['trial_counter', 'kappa_mean', 'kappa_std']
+        for k, v in sorted(self.param_space.items()):
+            headers.append(k)
+        self.writer.writerow(headers)
+        self.log_handler.flush()
 
     def log_param(self, param, feat_name, kappa_cv_mean, kappa_cv_std):
         """
@@ -274,14 +287,14 @@ class BaseModel(object):
         print("------------------------------------------------------------")
         print "Trial %d" % self.trial_counter
 
-        print("        Model")
-        print("              %s" % feat_name)
-        print("        Param")
+        print(" Model")
+        print(" %s" % feat_name)
+        print(" Param")
         for k, v in sorted(param.items()):
-            print("              %s: %s" % (k, v))
-        print("        Result")
+            print(" %s: %s" % (k, v))
+        print(" Result")
         print("                    Run      Fold      Bag      Kappa      Shape")
-        ## log
+        # log
         var_to_log = [
             "%d" % self.trial_counter,
             "%.6f" % kappa_cv_mean,
@@ -291,19 +304,6 @@ class BaseModel(object):
         for k, v in sorted(param.items()):
             var_to_log.append("%s" % v)
         self.writer.writerow(var_to_log)
-        self.log_handler.flush()
-
-    def log_header(self):
-        """
-        log 记录文件头部
-        :return:
-        """
-        # 记录日志 到output/***_hyperopt.log
-        # 每行日志都包含 'trial_counter', 'kappa_mean', 'kappa_std' 三个字段 + 模型参数
-        headers = ['trial_counter', 'kappa_mean', 'kappa_std']
-        for k, v in sorted(self.param_space.items()):
-            headers.append(k)
-        self.writer.writerow(headers)
         self.log_handler.flush()
 
     @abc.abstractmethod

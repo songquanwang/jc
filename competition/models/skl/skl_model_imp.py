@@ -22,37 +22,36 @@ class SklModelImp(BaseModel):
     def __init__(self, param_space, info_folder,feat_folder, feat_name):
         super(SklModelImp, self).__init__(param_space, info_folder,feat_folder, feat_name)
 
-    def train_predict(self, set_obj, all=False):
+    def train_predict(self, param, set_obj, all=False):
         """
         数据训练
         :param train_end_date:
         :return:
         """
-        if self.param['task'] == "reg_skl_rf":
+        if param['task'] == "reg_skl_rf":
             pred = self.reg_skl_rf_predict(self, set_obj, all=False)
 
-        elif self.param['task'] == "reg_skl_etr":
+        elif param['task'] == "reg_skl_etr":
 
             pred = self.reg_skl_etr_predict(self, set_obj, all=False)
-        elif self.param['task'] == "reg_skl_gbm":
+        elif param['task'] == "reg_skl_gbm":
 
             pred = self.reg_skl_gbm_predict(self, set_obj, all=False)
-        elif self.param['task'] == "clf_skl_lr":
+        elif param['task'] == "clf_skl_lr":
 
             pred = self.clf_skl_lr_predict(self, set_obj, all=False)
-        elif self.param['task'] == "reg_skl_svr":
+        elif param['task'] == "reg_skl_svr":
             pred = self.reg_skl_svr_predict(self, set_obj, all=False)
 
-        elif self.param['task'] == "reg_skl_ridge":
+        elif param['task'] == "reg_skl_ridge":
             pred = self.reg_skl_ridge_predict(self, set_obj, all=False)
 
-        elif self.param['task'] == "reg_skl_lasso":
+        elif param['task'] == "reg_skl_lasso":
             pred = self.reg_skl_lasso_predict(self, set_obj, all=False)
         return pred
 
-    def reg_skl_rf_predict(self, set_obj, all=False):
-        ## regression with sklearn random forest regressor
-        param = set_obj.param
+    def reg_skl_rf_predict(self, param,set_obj, all=False):
+        # regression with sklearn random forest regressor
         rf = RandomForestRegressor(n_estimators=param['n_estimators'],
                                    max_features=param['max_features'],
                                    n_jobs=param['n_jobs'],
@@ -66,9 +65,8 @@ class SklModelImp(BaseModel):
 
         return pred
 
-    def reg_skl_etr_predict(self, set_obj, all=False):
-        ## regression with sklearn extra trees regressor
-        param = set_obj.param
+    def reg_skl_etr_predict(self, param,set_obj, all=False):
+        # regression with sklearn extra trees regressor
         etr = ExtraTreesRegressor(n_estimators=param['n_estimators'],
                                   max_features=param['max_features'],
                                   n_jobs=param['n_jobs'],
@@ -81,9 +79,8 @@ class SklModelImp(BaseModel):
             pred = etr.predict(set_obj.X_test)
         return pred
 
-    def reg_skl_gbm_predict(self, set_obj, all=False):
-        ## regression with sklearn gradient boosting regressor
-        param = set_obj.param
+    def reg_skl_gbm_predict(self, param,set_obj, all=False):
+        # regression with sklearn gradient boosting regressor
         gbm = GradientBoostingRegressor(n_estimators=param['n_estimators'],
                                         max_features=param['max_features'],
                                         learning_rate=param['learning_rate'],
@@ -98,9 +95,8 @@ class SklModelImp(BaseModel):
             pred = gbm.predict(set_obj.X_test.toarray())
         return pred
 
-    def clf_skl_lr_predict(self, set_obj, all=False):
-        ## classification with sklearn logistic regression   只寻找一个参数的最优参数
-        param = set_obj.param
+    def clf_skl_lr_predict(self, param,set_obj, all=False):
+        # classification with sklearn logistic regression   只寻找一个参数的最优参数
         lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                 C=param['C'], fit_intercept=True, intercept_scaling=1.0,
                                 class_weight='auto', random_state=param['random_state'])
@@ -117,9 +113,8 @@ class SklModelImp(BaseModel):
             pred = np.sum(pred, axis=1)
         return pred
 
-    def reg_skl_svr_predict(self, set_obj, all=False):
-        ## regression with sklearn support vector regression
-        param = set_obj.param
+    def reg_skl_svr_predict(self, param,set_obj, all=False):
+        # regression with sklearn support vector regression
         X_train = set_obj.X_train.toarray()
         scaler = StandardScaler()
         X_train[set_obj.index_base] = scaler.fit_transform(X_train[set_obj.index_base])
@@ -137,8 +132,8 @@ class SklModelImp(BaseModel):
             pred = svr.predict(X_test)
         return pred
 
-    def reg_skl_ridge_predict(self, set_obj, all=False):
-        ## regression with sklearn ridge regression
+    def reg_skl_ridge_predict(self, param,set_obj, all=False):
+        # regression with sklearn ridge regression
         param = set_obj.param
         ridge = Ridge(alpha=param["alpha"], normalize=True)
         ridge.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
@@ -149,8 +144,8 @@ class SklModelImp(BaseModel):
             pred = ridge.predict(set_obj.X_test)
         return pred
 
-    def reg_skl_lasso_predict(self, set_obj, all=False):
-        ## regression with sklearn lasso
+    def reg_skl_lasso_predict(self, param,set_obj, all=False):
+        # regression with sklearn lasso
         param = set_obj.param
         lasso = Lasso(alpha=param["alpha"], normalize=True)
         lasso.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1)
@@ -160,8 +155,6 @@ class SklModelImp(BaseModel):
             pred = lasso.predict(set_obj.X_test)
         return pred
 
-    def get_predicts(self):
-        return
 
     @staticmethod
     def get_id():

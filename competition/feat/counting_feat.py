@@ -184,7 +184,7 @@ class CountingFeat(BaseFeat):
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
-    def cv_gen_feat(self):
+    def gen_feat_cv(self):
         """
 
         :return:
