@@ -25,24 +25,25 @@ class BaseModel(object):
         self.feat_folder = feat_folder
         self.info_folder = info_folder
         self.feat_name = feat_name
+        self.all_matrix = dict()
         self.run_fold_matrix = np.empty((config.n_runs, config.n_folds), dtype=object)
         self.trial_counter = 0
         log_file = "%s/Log/%s_hyperopt.log" % (model_param_conf.output_path, feat_name)
         self.log_handler = open(log_file, 'wb')
         self.writer = csv.writer(self.log_handler)
 
-    def init_all_path(self):
+    def init_all_path(self, matrix):
         feat_path = "%s/All" % (self.feat_folder)
         info_path = "%s/All" % (self.info_folder)
-        self.feat_train_path = "%s/train.feat" % feat_path
-        self.feat_test_path = "%s/test.feat" % feat_path
+        matrix.feat_train_path = "%s/train.feat" % feat_path
+        matrix.feat_test_path = "%s/test.feat" % feat_path
 
-        self.weight_train_path = "%s/train.feat.weight" % info_path
+        matrix.weight_train_path = "%s/train.feat.weight" % info_path
 
-        self.info_train_path = "%s/train.info" % info_path
-        self.info_test_path = "%s/test.info" % info_path
+        matrix.info_train_path = "%s/train.info" % info_path
+        matrix.info_test_path = "%s/test.info" % info_path
 
-        self.cdf_test_path = "%s/test.cdf" % info_path
+        matrix.cdf_test_path = "%s/test.cdf" % info_path
 
     def init_run_fold_path(self, run, fold, matrix):
         feat_path = "%s/Run%d/Fold%d" % (self.feat_folder, run, fold)
@@ -75,12 +76,12 @@ class BaseModel(object):
 
         return raw_pred_valid_path, rank_pred_valid_path
 
-    def gen_set_obj_all(self):
+    def gen_set_obj_all(self, matrix):
         # init the path
-        self.init_all_path()
+        self.init_all_path(matrix)
         # feat
-        X_train, labels_train = load_svmlight_file(self.feat_train_path)
-        X_test, labels_test = load_svmlight_file(self.feat_test_path)
+        X_train, labels_train = load_svmlight_file(matrix.feat_train_path)
+        X_test, labels_test = load_svmlight_file(matrix.feat_test_path)
         # 延展array
         if X_test.shape[1] < X_train.shape[1]:
             X_test = hstack([X_test, np.zeros((X_test.shape[0], X_train.shape[1] - X_test.shape[1]))])
@@ -89,28 +90,20 @@ class BaseModel(object):
         X_train = X_train.tocsr()
         X_test = X_test.tocsr()
         # 赋给成员变量
-        self.X_train, self.labels_train, self.X_test, self.labels_test = X_train, labels_train, X_test, labels_test
+        matrix.X_train, matrix.labels_train, matrix.X_test, matrix.labels_test = X_train, labels_train, X_test, labels_test
         # weight
-        self.weight_train = np.loadtxt(self.weight_train_path, dtype=float)
+        matrix.weight_train = np.loadtxt(matrix.weight_train_path, dtype=float)
         # info
-        self.info_train = pd.read_csv(self.info_train_path)
-        self.info_test = pd.read_csv(self.info_test_path)
+        matrix.info_train = pd.read_csv(matrix.info_train_path)
+        matrix.info_test = pd.read_csv(matrix.info_test_path)
         # cdf
-        self.cdf_test = np.loadtxt(self.cdf_test_path, dtype=float)
+        matrix.cdf_test = np.loadtxt(matrix.cdf_test_path, dtype=float)
         # number
-        self.numTrain = self.info_train.shape[0]
-        self.numTest = self.info_test.shape[0]
+        matrix.numTrain = matrix.info_train.shape[0]
+        matrix.numTest = matrix.info_test.shape[0]
+        return matrix
 
-        # 对数据进行自举法抽样；因为ratio=1 且bootstrap_replacement=false 说明没有用到，就使用的是全量数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, self.numTrain, model_param_conf.bootstrap_ratio)
-        self.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=self.weight_train[index_base])
-        self.dtest = xgb.DMatrix(X_test, label=labels_test)
-        # watchlist
-        self.watchlist = []
-        if model_param_conf.verbose_level >= 2:
-            self.watchlist = [(self.dtrain_base, 'train')]
-
-    def gen_set_obj_run_fold(self, run, fold):
+    def gen_set_obj_run_fold(self, run, fold, matrix):
         """
         每个run 每个fold 生成
         :param run:
@@ -118,9 +111,7 @@ class BaseModel(object):
         :return:
         """
         # init the path
-        self.init_run_fold_path(self, run, fold)
-        matrix = self.run_fold_matrix[run][fold]
-
+        self.init_run_fold_path(run, fold, matrix)
         # feat
         X_train, labels_train = load_svmlight_file(matrix.feat_train_path)
         X_valid, labels_valid = load_svmlight_file(matrix.feat_valid_path)
@@ -145,15 +136,23 @@ class BaseModel(object):
         matrix.numTrain = matrix.info_train.shape[0]
         matrix.numValid = matrix.info_valid.shape[0]
 
-        # 对数据进行自举法抽样；因为ratio=1 且bootstrap_replacement=false 说明没有用到，就使用的是全量数据
-        index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, matrix.numTrain, model_param_conf.bootstrap_ratio)
-        matrix.dtrain = xgb.DMatrix(X_train[index_base], label=labels_train[index_base], weight=matrix.weight_train[index_base])
-        matrix.dvalid = xgb.DMatrix(X_valid, label=labels_valid)
-        # watchlist
-        matrix.watchlist = []
-        if model_param_conf.verbose_level >= 2:
-            matrix.watchlist = [(matrix.dtrain_base, 'train'), (matrix.dvalid_base, 'valid')]
         return matrix
+
+    def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank):
+
+        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
+        # write
+        output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
+        output.to_csv(raw_pred_test_path, index=False)
+
+        # write
+        output = pd.DataFrame({"id": self.id_test, "prediction": pred_rank})
+        output.to_csv(rank_pred_test_path, index=False)
+
+        # write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
+        pred_score = utils.getScore(pred_raw, self.cdf_test)
+        output = pd.DataFrame({"id": self.id_test, "prediction": pred_score})
+        output.to_csv(subm_path, index=False)
 
     def out_put_run_fold(self, run, fold, feat_name, trial_counter, X_train, Y_valid, pred_raw, pred_rank, kappa_valid):
         """
@@ -178,22 +177,6 @@ class BaseModel(object):
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_rank})
         dfPred.to_csv(rank_pred_valid_path, index=False, header=True, columns=["target", "prediction"])
 
-    def out_put_all(self, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank):
-
-        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_name, trial_counter, kappa_cv_mean, kappa_cv_std)
-        # write
-        output = pd.DataFrame({"id": self.id_test, "prediction": pred_raw})
-        output.to_csv(raw_pred_test_path, index=False)
-
-        # write
-        output = pd.DataFrame({"id": self.id_test, "prediction": pred_rank})
-        output.to_csv(rank_pred_test_path, index=False)
-
-        # write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
-        pred_score = utils.getScore(pred_raw, self.cdf_test)
-        output = pd.DataFrame({"id": self.id_test, "prediction": pred_score})
-        output.to_csv(subm_path, index=False)
-
     def gen_bagging(self, param, set_obj, all):
         """
         分袋整合预测结果
@@ -201,23 +184,42 @@ class BaseModel(object):
         :param all:
         :return:
         """
-        preds_bagging = np.zeros((self.numTest, model_param_conf.bagging_size), dtype=float)
         for n in range(model_param_conf.bagging_size):
-            # 调用 每个子类的train_predict方法，多态
-            pred = self.train_predict(self, param, set_obj, all)
-            pred_test = pred
-            preds_bagging[:, n] = pred_test
-            if not all:
+            # 对数据进行自举法抽样；因为ratio=1 且bootstrap_replacement=false 说明没有用到，就使用的是全量数据
+            index_base, index_meta = utils.bootstrap_all(model_param_conf.bootstrap_replacement, set_obj.numTrain, model_param_conf.bootstrap_ratio)
+            set_obj.dtrain = xgb.DMatrix(set_obj.X_train[index_base], label=set_obj.labels_train[index_base], weight=set_obj.weight_train[index_base])
+            if all:
+                preds_bagging = np.zeros((set_obj.numValid, model_param_conf.bagging_size), dtype=float)
+                set_obj.dtest = xgb.DMatrix(set_obj.X_test, label=set_obj.labels_test)
+                # watchlist
+                set_obj.watchlist = []
+                if model_param_conf.verbose_level >= 2:
+                    set_obj.watchlist = [(set_obj.dtrain_base, 'train')]
+                    # 调用 每个子类的train_predict方法，多态
+                pred = self.train_predict(param, set_obj, all)
+                pred_test = pred
+                preds_bagging[:, n] = pred_test
+            else:
+                preds_bagging = np.zeros((self.numTest, model_param_conf.bagging_size), dtype=float)
+                set_obj.dvalid = xgb.DMatrix(set_obj.X_valid, label=set_obj.labels_valid)
+                # watchlist
+                set_obj.watchlist = []
+                if model_param_conf.verbose_level >= 2:
+                    set_obj.watchlist = [(set_obj.dtrain_base, 'train'), (set_obj.dvalid_base, 'valid')]
+                # 调用 每个子类的train_predict方法，多态
+                pred = self.train_predict(param, set_obj, all)
+                pred_valid = pred
+                preds_bagging[:, n] = pred_valid
                 # 每次会把当前bagging的结果累计进来 求均值
-                pred_raw = np.mean(preds_bagging[:, :(pred + 1)], axis=1)
+                pred_raw = np.mean(preds_bagging[:, :(n + 1)], axis=1)
                 # 为什么需要两次argsort？
                 pred_rank = pred_raw.argsort().argsort()
-                pred_score, cutoff = utils.getScore(pred_rank, self.cdf_valid, valid=True)
-                kappa_valid = utils.quadratic_weighted_kappa(pred_score, self.Y_valid)
+                pred_score, cutoff = utils.getScore(pred_rank, set_obj.cdf_valid, valid=True)
+                kappa_valid = utils.quadratic_weighted_kappa(pred_score, set_obj.Y_valid)
 
-        pred_raw = np.mean(preds_bagging, axis=1)
-        pred_rank = pred_raw.argsort().argsort()
         if all:
+            pred_raw = np.mean(preds_bagging, axis=1)
+            pred_rank = pred_raw.argsort().argsort()
             return pred_raw, pred_rank
         else:
             return pred_raw, pred_rank, kappa_valid
@@ -235,9 +237,9 @@ class BaseModel(object):
         for run in range(1, config.n_runs + 1):
             for fold in range(1, config.n_folds + 1):
                 # 生成 run_fold_set_obj
-                set_obj = self.gen_set_obj_run_fold(self, run, fold)
+                set_obj = self.gen_set_obj_run_fold(run, fold, self.run_fold_matrix)
                 # bagging结果
-                pred_raw, pred_rank, kappa_valid = self.gen_bagging(self, param, set_obj, all=False)
+                pred_raw, pred_rank, kappa_valid = self.gen_bagging(param, set_obj, all=False)
                 # 输出文件
                 kappa_cv[run - 1, fold - 1] = kappa_valid
                 # 生成没run fold的结果
@@ -247,8 +249,9 @@ class BaseModel(object):
         if model_param_conf.verbose_level >= 1:
             print(" Mean: %.6f" % kappa_cv_mean)
             print(" Std: %.6f" % kappa_cv_std)
-        # bagging结果
-        pred_raw, pred_rank = self.gen_bagging(self, param, set_obj, all=True)
+        # all result
+        all_set_obj = self.gen_set_obj_all(self.all_matrix)
+        pred_raw, pred_rank = self.gen_bagging(param, all_set_obj, all=True)
         # 生成提交结果
         self.out_put_all(feat_folder, feat_name, trial_counter, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank)
         # 记录参数文件

@@ -31,7 +31,7 @@ class KerasDnnModelImp(BaseModel):
         # scale
         scaler = StandardScaler()
         X_train = set_obj.X_train.toarray()
-        X_train[set_obj.index_base] = scaler.fit_transform(X_train[matrix.index_base])
+        X_train[set_obj.index_base] = scaler.fit_transform(X_train[set_obj.index_base])
         # test or valid to array
         if all:
             # to array

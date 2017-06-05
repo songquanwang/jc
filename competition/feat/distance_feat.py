@@ -32,15 +32,11 @@ __author__
 """
 
 import cPickle
-from copy import copy
 import abc
 
 import numpy as np
-import pandas as pd
 
-from competition.feat.nlp import ngram
 import competition.conf.model_params_conf as  config
-from competition.feat.nlp.nlp_utils import preprocess_data
 from  competition.feat.base_feat import BaseFeat
 import competition.utils.utils as utils
 import competition.conf.feat_params_conf as feat_params_conf

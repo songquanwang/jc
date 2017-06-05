@@ -39,7 +39,6 @@ import cPickle
 import abc
 
 import numpy as np
-import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics.pairwise import cosine_similarity, pairwise_distances
 

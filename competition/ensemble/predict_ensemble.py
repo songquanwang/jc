@@ -35,21 +35,9 @@ class PredictEnsemble(object):
         self.subm_folder = "../../Output/Subm"
         self.model_list = []
         self.model2idx = dict()
+
         # 每个model的kappa值
-        self.kappa_list = dict()
-
         self.max_num_valid = 12000
-        # 模型-run-fold-行
-        self.pred_list_valid = np.zeros((len(self.model_list), config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
-        # run-fold-行
-        self.y_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
-        # run-fold-4类别
-        self.cdf_list_valid = np.zeros((config.n_runs, config.n_folds, config.num_of_class), dtype=float)
-        # run-fold
-        self.num_valid_matrix = np.zeros((config.n_runs, config.n_folds), dtype=int)
-        # run-fold-行
-        self.p_ens_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
-
         id_sizes = config.ensemble_model_top__k * np.ones(len(model_library_config.feat_names), dtype=int)
 
         # 读取各个模型hyperopt文件
@@ -71,7 +59,6 @@ class PredictEnsemble(object):
         # 初始化
         for i, model in enumerate(self.model_list):
             self.model2idx[model] = i
-            self.kappa_list[model] = 0
 
         # 不存在则创建目录
         if not os.path.exists(self.subm_folder):
@@ -128,19 +115,30 @@ class PredictEnsemble(object):
         """
          为每个交叉验证数据按照 run-fold生成一系列指标
          初始化实例变量,供后续方法使用
+         kappa_list      ：每个模型的平均kappa值
          num_valid_matrix:每个run-fold 的预测结果行数
          y_list_valid    :每个run-fold 的真实label
          cdf_list_valid  ：每个run-fold 的cdf
          kappa_cv        ：每个run-fold 的kappa cv
          pred_list_valid :每个run-fold 的真实预测值
-         kappa_list      ：每个模型的平均kappa值
+
         :param feat_folder:
         :param cdf:
         :return:
         """
+        kappa_list = dict()
+        # 模型-run-fold-行 交叉验证-valid数据集预测结果
+        pred_list_valid = np.zeros((len(self.model_list), config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
+        # run-fold-行      交叉验证-valid数据集真实label
+        y_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
+        # run-fold-4类别   交叉验证-valid数据集预测结果cdf
+        cdf_list_valid = np.zeros((config.n_runs, config.n_folds, config.num_of_class), dtype=float)
+        # run-fold valid   交叉验证-valid数据集预测结果行数
+        num_valid_matrix = np.zeros((config.n_runs, config.n_folds), dtype=int)
         print("Load model...")
         for i, model in enumerate(self.model_list):
             print("model: %s" % model)
+            kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
             for run in range(config.n_runs):
                 for fold in range(config.n_folds):
                     path = "%s/Run%d/Fold%d" % (self.model_folder, run + 1, fold + 1)
@@ -150,23 +148,25 @@ class PredictEnsemble(object):
                     # 这些指标只需要执行一次就行了，每个模型都一样
                     if i == 0:
                         # 记录run-fold的行数
-                        self.num_valid_matrix[run][fold] = this_p_valid.shape[0]
+                        num_valid_matrix[run][fold] = this_p_valid.shape[0]
                         # 记录run-fold的真实值
-                        self.y_list_valid[run, fold, :self.num_valid_matrix[run][fold]] = this_p_valid["target"].values
+                        y_list_valid[run, fold, :self.num_valid_matrix[run][fold]] = this_p_valid["target"].values
                         # load cdf
                         if cdf == None:
-                            self.cdf_list_valid[run, fold, :] = np.loadtxt(cdf_file, dtype=float)
+                            cdf_list_valid[run, fold, :] = np.loadtxt(cdf_file, dtype=float)
                         else:
-                            self.cdf_list_valid[run, fold, :] = cdf
-                        score = getScore(this_p_valid["prediction"].values, self.cdf_list_valid[run, fold, :])
-                        self.kappa_cv[run][fold] = quadratic_weighted_kappa(score, self.y_list_valid[run, fold, :self.num_valid_matrix[run][fold]])
+                            cdf_list_valid[run, fold, :] = cdf
+                        score = getScore(this_p_valid["prediction"].values, cdf_list_valid[run, fold, :])
+                        kappa_cv[run][fold] = quadratic_weighted_kappa(score, self.y_list_valid[run, fold, :self.num_valid_matrix[run][fold]])
                     # 记录model-run-fold的预测值数组
-                    self.pred_list_valid[self.model2idx[model], run, fold, :this_p_valid.shape[0]] = this_p_valid["prediction"].values
-            print("kappa: %.6f" % np.mean(self.kappa_cv))
+                    pred_list_valid[self.model2idx[model], run, fold, :this_p_valid.shape[0]] = this_p_valid["prediction"].values
+            print("kappa: %.6f" % np.mean(kappa_cv))
             # 算出每个模型的平均kappa_cv
-            self.kappa_list[model] = np.mean(self.kappa_cv)
+            kappa_list[model] = np.mean(kappa_cv)
 
-    def init_topk_best_model(self, init_top_k, this_sorted_models):
+        return kappa_list, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix
+
+    def init_topk_best_model(self, init_top_k, this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix):
         """
         选择前五个模型 返回整合后的预测值；前五个模型名字；前五个模型的权重(全是1,相当于取平均值)
         读取实例变量：
@@ -181,7 +181,7 @@ class PredictEnsemble(object):
         """
         best_model_list = []
         best_model_weight = []
-        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, self.num_valid_matrix), dtype=float)
+        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, num_valid_matrix), dtype=float)
         w_ens, this_w = 0, 1.0
         cnt = 0
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
@@ -190,16 +190,16 @@ class PredictEnsemble(object):
             print("model: %s" % model)
             print("kappa: %.6f" % kappa)
             # 指定模型的预测结果
-            this_p_list_valid = self.pred_list_valid[self.model2idx[model]]
+            this_p_list_valid = pred_list_valid[self.model2idx[model]]
             for run in range(config.n_runs):
                 for fold in range(config.n_folds):
-                    num_valid = self.num_valid_matrix[run][fold]
+                    num_valid = num_valid_matrix[run][fold]
                     # 多个模型预测值线性组合
                     p_ens_list_valid_topk[run, fold, :num_valid] = (w_ens * p_ens_list_valid_topk[run, fold, :num_valid] + this_w * this_p_list_valid[run, fold, :num_valid]) / (w_ens + this_w)
                     # 在最后一个model，生成一些指标
                     if cnt == init_top_k - 1:
-                        cdf = self.cdf_list_valid[run, fold, :]
-                        true_label = self.y_list_valid[run, fold, :num_valid]
+                        cdf = cdf_list_valid[run, fold, :]
+                        true_label = y_list_valid[run, fold, :num_valid]
                         score = getScore(p_ens_list_valid_topk[run, fold, :num_valid], cdf)
                         kappa_cv[run][fold] = quadratic_weighted_kappa(score, true_label)
             best_model_list.append(model)
@@ -209,8 +209,7 @@ class PredictEnsemble(object):
             print("Init kappa: %.6f (%.6f)" % (np.mean(kappa_cv), np.std(kappa_cv)))
         return best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens
 
-    def ensemble_selection_obj(self, param, p1_list, weight1, p2_list):
-
+    def ensemble_selection_obj(self, param, p1_list, weight1, p2_list, y_list_valid, cdf_list_valid, num_valid_matrix):
         """
         优化param中的weight_current_model参数，使其平均kappa_cv_mean 最大
         :param param:
@@ -223,19 +222,20 @@ class PredictEnsemble(object):
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
         for run in range(config.n_runs):
             for fold in range(config.n_folds):
-                num_valid = self.num_valid_matrix[run][fold]
+                num_valid = num_valid_matrix[run][fold]
                 p1 = p1_list[run, fold, :num_valid]
                 p2 = p2_list[run, fold, :num_valid]
-                true_label = self.y_list_valid[run, fold, :num_valid]
-                cdf = self.cdf_list_valid[run, fold, :]
+                true_label = y_list_valid[run, fold, :num_valid]
+                cdf = cdf_list_valid[run, fold, :]
                 p_ens = (weight1 * p1 + weight_current_model * p2) / (weight1 + weight_current_model)
                 p_ens_score = getScore(p_ens, cdf)
                 kappa_cv[run][fold] = quadratic_weighted_kappa(p_ens_score, true_label)
         kappa_cv_mean = np.mean(kappa_cv)
         return {'loss': -kappa_cv_mean, 'status': STATUS_OK}
 
-    def find_best_model(self, this_sorted_models, w_ens, w_min, w_max, best_kappa, hypteropt_max_evals, p_ens_list_valid_topk):
+    def find_best_model(self, this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix, w_ens, w_min, w_max, best_kappa, hypteropt_max_evals, p_ens_list_valid_topk):
         """
+        从模型集合中找出一个最佳模型，最佳系数，与topK集成结果进行线性组合
         寻找最佳模型、权重、kappa值 从this_sorted_models找到一个最佳模型
         :param this_sorted_models:
         :param w_ens:
@@ -249,13 +249,14 @@ class PredictEnsemble(object):
         best_weight = 0
         for model, kappa in this_sorted_models:
             # 当前模型预测值
-            this_p_list_valid = self.pred_list_valid[self.model2idx[model]]
+            this_p_list_valid = pred_list_valid[self.model2idx[model]]
             # hyperopt 找当前模型最优权重
             trials = Trials()
             # 不同模型的权重
             param_space = {
                 'weight_current_model': hp.uniform('weight_current_model', w_min, w_max)
             }
+            # topk权重是1 找另一个最佳权重
             obj = lambda param: self.ensemble_selection_obj(param, p_ens_list_valid_topk, 1., this_p_list_valid)
             best_params = fmin(obj, param_space, algo=tpe.suggest, trials=trials, max_evals=hypteropt_max_evals)
             # 返回当前模型权重
@@ -266,23 +267,25 @@ class PredictEnsemble(object):
             kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
             for run in range(config.n_runs):
                 for fold in range(config.n_folds):
-                    num_valid = self.num_valid_matrix[run][fold]
+                    num_valid = num_valid_matrix[run][fold]
                     # topk预测
                     p1 = p_ens_list_valid_topk[run, fold, :num_valid]
                     # 当前预测
                     p2 = this_p_list_valid[run, fold, :num_valid]
                     # 真实label
-                    true_label = self.y_list_valid[run, fold, :num_valid]
-                    cdf = self.cdf_list_valid[run, fold, :]
+                    true_label = y_list_valid[run, fold, :num_valid]
+                    cdf = cdf_list_valid[run, fold, :]
+                    # 集成后的结果
                     p_ens = (w_ens * p1 + this_w * p2) / (w_ens + this_w)
                     score = getScore(p_ens, cdf)
                     # 集成后kappa值
                     kappa_cv[run][fold] = quadratic_weighted_kappa(score, true_label)
+            # 集成后平均kappa cv 由于现在
             if np.mean(kappa_cv) > best_kappa:
                 best_kappa, best_model, best_weight = np.mean(kappa_cv), model, this_w
         return best_kappa, best_model, best_weight
 
-    def gen_best_model_and_weight(self, this_sorted_models, w_min, w_max, hypteropt_max_evals, best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens):
+    def gen_best_model_and_weight(self, this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix, w_min, w_max, hypteropt_max_evals, best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens):
         """
         一组模型，循环遍历，只集成比当前模型好的
         :param this_sorted_models:
@@ -301,7 +304,8 @@ class PredictEnsemble(object):
         while True:
             iter += 1
             # 根据 当前best_kappa 找到一个比他平均kappa更好的模型;每次w_ens,best_kappa、p_ens_list_valid_topk 变化；应该会重复找到同一个模型？？
-            best_kappa, best_model, best_weight = self.find_best_model(this_sorted_models, w_ens, w_min, w_max, best_kappa, hypteropt_max_evals, p_ens_list_valid_topk)
+            best_kappa, best_model, best_weight = self.find_best_model(this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix, w_ens, w_min, w_max, best_kappa, hypteropt_max_evals,
+                                                                       p_ens_list_valid_topk)
             # 这次迭代找不到best_kappa更好的模型则终止
             if best_model == None:
                 break
@@ -320,8 +324,9 @@ class PredictEnsemble(object):
                     p_ens_list_valid_topk[run, fold, :num_valid] = (w_ens * p_ens_list_valid_topk[run, fold, :num_valid] + best_weight * this_p_list_valid[run, fold, :num_valid]) / (w_ens + best_weight)
             best_model = None
             w_ens += best_weight
+        return best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens
 
-    def gen_kappa_cv(self, bagging_iter, p_ens_list_valid_topk):
+    def gen_kappa_cv(self, bagging_iter, y_list_valid, cdf_list_valid, num_valid_matrix, p_ens_list_valid_topk, p_ens_list_valid):
         """
         多次bagging 的结果平均值
         :param bagging_iter:第几次bagging，有几次，权重是几
@@ -329,24 +334,23 @@ class PredictEnsemble(object):
         :param p_ens_list_valid_topk:
         :return:
         """
-
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
         cutoff = np.zeros((3), dtype=float)
         for run in range(config.n_runs):
             for fold in range(config.n_folds):
-                numValid = self.num_valid_matrix[run][fold]
-                true_label = self.y_list_valid[run, fold, :numValid]
-                cdf = self.cdf_list_valid[run, fold, :]
+                numValid = num_valid_matrix[run][fold]
+                true_label = y_list_valid[run, fold, :numValid]
+                cdf = cdf_list_valid[run, fold, :]
                 # 每次bagging的结果平均
-                self.p_ens_list_valid[run, fold, :numValid] = (bagging_iter * self.p_ens_list_valid[run, fold, :numValid] + p_ens_list_valid_topk[run, fold, :numValid]) / (bagging_iter + 1.)
-                score, cutoff_tmp = getScore(self.p_ens_list_valid[run, fold, :numValid], cdf, "valid")
+                p_ens_list_valid[run, fold, :numValid] = (bagging_iter * p_ens_list_valid[run, fold, :numValid] + p_ens_list_valid_topk[run, fold, :numValid]) / (bagging_iter + 1.)
+                score, cutoff_tmp = getScore(p_ens_list_valid[run, fold, :numValid], cdf, "valid")
                 kappa_cv[run][fold] = quadratic_weighted_kappa(score, true_label)
                 cutoff += cutoff_tmp
         cutoff /= float(config.n_runs * config.n_folds)
         # 没搞懂？
         cutoff *= (22513 / ((2. / 3) * 10158))
         print("Bag %d, kappa: %.6f (%.6f)" % (bagging_iter + 1, np.mean(kappa_cv), np.std(kappa_cv)))
-        return kappa_cv, cutoff
+        return kappa_cv, cutoff, p_ens_list_valid
 
     def ensemble_selection(self, feat_folder, model_folder, model_list, cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10,
                            init_top_k=5,
@@ -371,15 +375,11 @@ class PredictEnsemble(object):
         """
 
         print("Load model...")
-        self.init_model_metrics_by_run_fold(feat_folder, cdf)
+        # 读取文件并初始化交叉验证相关集合
+        kappa_list, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix = self.init_model_metrics_by_run_fold(feat_folder, cdf)
 
-        cdf_mean_init = np.mean(np.mean(self.cdf_list_valid, axis=0), axis=0)
-        cdf_mean_init = cdf_mean_init.tolist()
-        cdf_mean_init.insert(0, 0)
-        # diff  1 2 4 --->1 2  ;把累计值拆分成 各个区间值
-        pdf_mean_init = np.diff(np.asarray(cdf_mean_init))
         # 按照 kappa_cv值 排序-置逆；大的靠前 ('model_id',cv)
-        sorted_models = sorted(self.kappa_list.items(), key=lambda x: x[1])[::-1]
+        sorted_models = sorted(kappa_list.items(), key=lambda x: x[1])[::-1]
 
         # greedy ensemble
         print("============================================================")
@@ -387,19 +387,22 @@ class PredictEnsemble(object):
         best_bagged_model_list = [[]] * bagging_size
         best_bagged_model_weight = [[]] * bagging_size
         num_model = len(model_list)
+        # run-fold-行      交叉验证-valid数据集整合后预测结果
+        p_ens_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
         # print bagging_size
         for bagging_iter in range(bagging_size):
-            # 抽取一部分模型
+            # 抽取一部分模型最为一次分袋
             index_base, index_meta = utils.bootstrap_data(2015 + 100 * bagging_iter, bagging_replacement, num_model, bagging_fraction)
             this_sorted_models = [sorted_models[i] for i in sorted(index_base)]
 
             # 用topk个模型做初始最佳模型，每个模型权值为1，valid_topk为topk个模型平均值
-            best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens = self.init_topk_best_model(init_top_k, this_sorted_models)
+            best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens = self.init_topk_best_model(init_top_k, this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix)
 
-            # 获取多个模型的权重，每次取出一个模型，找一个最佳的组合系数
-            self.gen_best_model_and_weight(this_sorted_models, w_min, w_max, hypteropt_max_evals, best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens)
-
-            kappa_cv, cutoff = self.gen_kappa_cv(bagging_iter, p_ens_list_valid_topk)
+            # 获取多个最佳模型和权重
+            best_model_list, best_model_weight, p_ens_list_valid_topk, w_ens = self.gen_best_model_and_weight(this_sorted_models, pred_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix, w_min, w_max, hypteropt_max_evals, best_model_list,
+                                                                                                              best_model_weight, p_ens_list_valid_topk, w_ens)
+            # 对集成的最佳结果 --再多次bagging求平均
+            kappa_cv, cutoff, p_ens_list_valid = self.gen_kappa_cv(bagging_iter, y_list_valid, cdf_list_valid, num_valid_matrix, p_ens_list_valid_topk, p_ens_list_valid)
 
             best_kappa_mean = np.mean(kappa_cv)
             best_kappa_std = np.std(kappa_cv)
