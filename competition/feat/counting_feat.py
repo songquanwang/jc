@@ -39,10 +39,10 @@ import numpy as np
 
 import competition.conf.model_params_conf as  config
 import competition.utils.utils as utils
-from  competition.feat.base_feat import BaseFeat
+from  competition.feat.abstract_base_feat import AbstractBaseFeat
 
 
-class CountingFeat(BaseFeat):
+class CountingFeat(AbstractBaseFeat):
     __metaclass__ = abc.ABCMeta
 
     @staticmethod

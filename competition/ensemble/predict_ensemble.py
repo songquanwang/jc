@@ -25,14 +25,15 @@ from competition.utils.ml_metrics import quadratic_weighted_kappa
 import competition.conf.model_params_conf as config
 import competition.conf.model_library_config as model_library_config
 import competition.utils.utils as utils
+from  competition.interface.ensemble_inter import EnsembleInter
 
 
-class PredictEnsemble(object):
+class PredictEnsemble(EnsembleInter):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self):
-        self.model_folder = "../../Output"
-        self.subm_folder = "../../Output/Subm"
+    def __init__(self, model_folder, subm_folder):
+        self.model_folder = model_folder
+        self.subm_folder = subm_folder
         self.model_list = []
         self.model2idx = dict()
 
@@ -352,7 +353,7 @@ class PredictEnsemble(object):
         print("Bag %d, kappa: %.6f (%.6f)" % (bagging_iter + 1, np.mean(kappa_cv), np.std(kappa_cv)))
         return kappa_cv, cutoff, p_ens_list_valid
 
-    def ensemble_selection(self, feat_folder, model_folder, model_list, cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10,
+    def ensemble_model_list_pedicts(self, feat_folder,   cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10,
                            init_top_k=5,
                            prunning_fraction=0.2):
         """
@@ -386,7 +387,7 @@ class PredictEnsemble(object):
         print("Perform ensemble selection...")
         best_bagged_model_list = [[]] * bagging_size
         best_bagged_model_weight = [[]] * bagging_size
-        num_model = len(model_list)
+        num_model = len(self.model_list)
         # run-fold-行      交叉验证-valid数据集整合后预测结果
         p_ens_list_valid = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
         # print bagging_size
@@ -410,34 +411,12 @@ class PredictEnsemble(object):
             best_bagged_model_weight[bagging_iter] = best_model_weight
 
             # save the current prediction 0-bagging个预测结果
-            output = self.ensemble_bagging_models_prediction(model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test)
+            output = self.ensemble_bagging_models_prediction(self.model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test)
             sub_file = "%s_[InitTopK%d]_[BaggingSize%d]_[BaggingFraction%s]_[Mean%.6f]_[Std%.6f]_cdf.csv" % (subm_prefix, init_top_k, bagging_iter + 1, bagging_fraction, best_kappa_mean, best_kappa_std)
             output.to_csv(sub_file, index=False)
             # use cutoff
-            output = self.ensemble_bagging_models_prediction(model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test, cutoff)
+            output = self.ensemble_bagging_models_prediction(self.model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test, cutoff)
             sub_file = "%s_[InitTopK%d]_[BaggingSize%d]_[BaggingFraction%s]_[Mean%.6f]_[Std%.6f]_cutoff.csv" % (subm_prefix, init_top_k, bagging_iter + 1, bagging_fraction, best_kappa_mean, best_kappa_std)
             output.to_csv(sub_file, index=False)
         return best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight
 
-    def ensemble_model_list_pedicts(self, feat_folder):
-        """
-
-        :param feat_folder: '../../Feat/solution/LSA_and_stats_feat_Jun09'
-        :return:
-        """
-        cdf_test = np.loadtxt("%s/All/test.cdf" % feat_folder, dtype=float)
-        cdf_valid = None
-        bagging_size = 100
-        # 选择全部模型
-        bagging_fraction = 1.0
-        # 剪枝参数没有用到
-        prunning_fraction = 1.
-        bagging_replacement = True
-        init_top_k = 5
-        subm_prefix = "%s/test.pred.[ensemble_selection]_[Solution]" % (self.subm_folder)
-        best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = self.ensemble_selection(feat_folder, self.model_folder, self.model_list, cdf=cdf_valid, cdf_test=cdf_test,
-                                                                                                                    subm_prefix=subm_prefix, \
-                                                                                                                    hypteropt_max_evals=1, w_min=-1, w_max=1, bagging_replacement=bagging_replacement,
-                                                                                                                    bagging_fraction=bagging_fraction, \
-                                                                                                                    bagging_size=bagging_size, init_top_k=init_top_k, prunning_fraction=prunning_fraction)
-        return best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight

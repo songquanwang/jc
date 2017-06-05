@@ -37,12 +37,12 @@ import abc
 import numpy as np
 
 import competition.conf.model_params_conf as  config
-from  competition.feat.base_feat import BaseFeat
+from  competition.feat.basic_tfidf_feat import AbstractBaseFeat
 import competition.utils.utils as utils
 import competition.conf.feat_params_conf as feat_params_conf
 
 
-class DistanceFeat(BaseFeat):
+class DistanceFeat(AbstractBaseFeat):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
@@ -137,10 +137,7 @@ class DistanceFeat(BaseFeat):
                     for j in range(i + 1, len(feat_names)):
                         target_name = feat_names[i]
                         obs_name = feat_names[j]
-                        df["%s_of_%s_between_%s_%s" % (dist, gram, target_name, obs_name)] = \
-                            list(df.apply(
-                                lambda x: DistanceFeat.compute_dist(x[target_name + "_" + gram], x[obs_name + "_" + gram], dist),
-                                axis=1))
+                        df["%s_of_%s_between_%s_%s" % (dist, gram, target_name, obs_name)] = list(df.apply(lambda x: DistanceFeat.compute_dist(x[target_name + "_" + gram], x[obs_name + "_" + gram], dist), axis=1))
 
     def extract_statistical_distance_feat(self, path, dfTrain, dfTest, mode):
         """
@@ -194,11 +191,11 @@ class DistanceFeat(BaseFeat):
         new_feat_names = []
         for feat_name in feat_names:
             X_train = dfTrain[feat_name]
-            dfTest = dfTest[feat_name]
+            X_test = dfTest[feat_name]
             with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
                 cPickle.dump(X_train, f, -1)
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
-                cPickle.dump(dfTest, f, -1)
+                cPickle.dump(X_test, f, -1)
             # add basic feat
             new_feat_names.append(feat_name)
             # extract statistical distance features
@@ -230,11 +227,11 @@ class DistanceFeat(BaseFeat):
         #######################
         print("==================================================")
         print("Generate distance features...")
-
+        # add column gram
         self.gen_column_gram(dfTrain)
         self.gen_column_gram(dfTest)
+        # add basic distince feat
         DistanceFeat.extract_basic_distance_feat(dfTrain)
-        ## use full version for X_train
         DistanceFeat.extract_basic_distance_feat(dfTest)
 
         feat_names = [name for name in dfTrain.columns if "jaccard_coef" in name or "dice_dist" in name]

@@ -23,35 +23,20 @@ from sklearn.preprocessing import LabelBinarizer
 import competition.conf.model_params_conf as config
 
 import abc
-from  competition.feat.base_feat import BaseFeat
+from  competition.feat.abstract_base_feat import AbstractBaseFeat
 
 
-class IdFeat(BaseFeat):
+class IdFeat(AbstractBaseFeat):
     __metaclass__ = abc.ABCMeta
 
     @staticmethod
-    def gen_id_feat_run_fold(id_names, run, fold, dfTrain, trainInd, validInd, lb):
-        print("Run: %d, Fold: %d" % (run + 1, fold + 1))
-        path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
-        for id_name in id_names:
-            X_train = lb.fit_transform(dfTrain.iloc[trainInd][id_name])
-            # 如果validInt 和trainInt没有相同 则transform() X_train没有的classes_会是零向量
-            X_valid = lb.transform(dfTrain.iloc[validInd][id_name])
-            with open("%s/train.%s.feat.pkl" % (path, id_name), "wb") as f:
+    def gen_feat(path, dfTrain, dfTest, mode, feat_names, lb):
+        for feat_name in feat_names:
+            X_train = lb.fit_transform(dfTrain[feat_name])
+            X_test = lb.transform(dfTest[feat_name])
+            with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
                 cPickle.dump(X_train, f, -1)
-            with open("%s/valid.%s.feat.pkl" % (path, id_name), "wb") as f:
-                cPickle.dump(X_valid, f, -1)
-
-    @staticmethod
-    def gen_feat(id_names, dfTrain, dfTest, lb):
-        path = "%s/All" % config.solution_feat_base
-        ## use full version for X_train
-        for id_name in id_names:
-            X_train = lb.fit_transform(dfTrain[id_name])
-            X_test = lb.transform(dfTest[id_name])
-            with open("%s/train.%s.feat.pkl" % (path, id_name), "wb") as f:
-                cPickle.dump(X_train, f, -1)
-            with open("%s/test.%s.feat.pkl" % (path, id_name), "wb") as f:
+            with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(X_test, f, -1)
 
     def gen_feat_cv(self):
@@ -59,7 +44,7 @@ class IdFeat(BaseFeat):
         入口函数
         :return:
         """
-        id_names = ["qid"]
+        feat_names = ["qid"]
         with open(config.processed_train_data_path, "rb") as f:
             dfTrain = cPickle.load(f)
         with open(config.processed_test_data_path, "rb") as f:
@@ -78,17 +63,21 @@ class IdFeat(BaseFeat):
             ## use 33% for training and 67 % for validation so we switch trainInd and validInd
             for fold, (validInd, trainInd) in enumerate(skf[run]):
                 print("Run: %d, Fold: %d" % (run + 1, fold + 1))
+                path = "%s/Run%d/Fold%d" % (config.solution_feat_base, run + 1, fold + 1)
                 # 生成 run fold
-                self.gen_feat(id_names, run, fold, dfTrain, trainInd, validInd, lb)
+                X_train_train = dfTrain.iloc[trainInd]
+                X_train_valid = dfTrain.iloc[validInd]
+                self.gen_feat(path, X_train_train, X_train_valid, "valid", feat_names, lb)
 
         print("Done.")
 
         print("For training and testing...")
-        self.gen_id_feat_all(id_names, dfTrain, dfTest, lb)
+        path = "%s/All" % config.solution_feat_base
+        self.gen_feat(path, dfTrain, dfTest, "test", feat_names, lb)
         print("Done.")
 
         # 保存特征文件
         feat_name_file = "%s/id.feat_name" % (config.solution_feat_combined)
-        self.gen_feat(id_names, feat_name_file)
+        self.dump_feat_name(feat_names, feat_name_file)
 
         print("All Done.")

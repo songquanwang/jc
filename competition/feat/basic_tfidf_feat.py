@@ -46,11 +46,11 @@ from scipy.sparse import vstack
 
 from competition.feat.nlp.nlp_utils import getTFV, getBOW
 import competition.conf.model_params_conf as config
-from  competition.feat.base_feat import BaseFeat
+from  competition.feat.abstract_base_feat import AbstractBaseFeat
 import competition.conf.feat_params_conf as feat_params_conf
 
 
-class BasicTfidfFeat(BaseFeat):
+class BasicTfidfFeat(AbstractBaseFeat):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):

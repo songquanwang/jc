@@ -3,15 +3,15 @@ __author__ = 'songquanwang'
 
 from sklearn.preprocessing import StandardScaler
 
-from competition.models.base_model import BaseModel
-## keras
+from competition.models.abstract_base_model import AbstractBaseModel
+# keras
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
 
 
-class KerasDnnModelImp(BaseModel):
+class KerasDnnModelImp(AbstractBaseModel):
     def __init__(self, param_space, info_folder,feat_folder, feat_name):
         super(KerasDnnModelImp, self).__init__(param_space, info_folder,feat_folder, feat_name)
 

@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from competition.models.base_model import BaseModel
+from competition.models.abstract_base_model import AbstractBaseModel
 
 ## sklearn
 from sklearn.datasets import dump_svmlight_file
@@ -14,11 +14,11 @@ from sklearn.preprocessing import StandardScaler
 import competition.conf.model_params_conf as model_param_conf
 
 
-class LibfmModelImp(BaseModel):
+class LibfmModelImp(AbstractBaseModel):
     def __init__(self, param_space, info_folder, feat_folder, feat_name):
         super(LibfmModelImp, self).__init__(param_space, info_folder, feat_folder, feat_name)
 
-    def train_predict(self,param, set_obj, all=False):
+    def train_predict(self, param, set_obj, all=False):
         """
         数据训练
         :param train_end_date:
@@ -44,8 +44,8 @@ class LibfmModelImp(BaseModel):
 
         dump_svmlight_file(X_test, labels_test, test_tmp_path)
         # train fm
-        cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" %\
-              (model_param_conf.libfm_exe, train_tmp_path, test_tmp_path,raw_pred_test_path, param['dim'], param['iter'])
+        cmd = "%s -task r -train %s -test %s -out %s -dim '1,1,%d' -iter %d > libfm.log" % \
+              (model_param_conf.libfm_exe, train_tmp_path, test_tmp_path, raw_pred_test_path, param['dim'], param['iter'])
         os.system(cmd)
         os.remove(train_tmp_path)
         os.remove(test_tmp_path)

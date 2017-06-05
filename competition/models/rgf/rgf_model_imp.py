@@ -5,15 +5,15 @@ import os
 
 import numpy as np
 
-from competition.models.base_model import BaseModel
+from competition.models.abstract_base_model import AbstractBaseModel
 import competition.conf.model_params_conf as model_param_conf
 
 
-class RgfModelImp(BaseModel):
+class RgfModelImp(AbstractBaseModel):
     def __init__(self, param_space, info_folder, feat_folder, feat_name):
         super(RgfModelImp, self).__init__(param_space, info_folder, feat_folder, feat_name)
 
-    def train_predict(self,param, set_obj, all=False):
+    def train_predict(self, param, set_obj, all=False):
         """
         数据训练
         :param train_end_date:

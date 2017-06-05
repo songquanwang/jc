@@ -15,9 +15,10 @@ import competition.conf.model_params_conf as model_param_conf
 import competition.utils.utils as utils
 import competition.conf.model_library_config as config
 import competition.conf.model_library_config as model_conf
+from competition.interface.model_inter import ModelInter
 
 
-class BaseModel(object):
+class AbstractBaseModel(ModelInter):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, param_space, info_folder, feat_folder, feat_name):
@@ -308,13 +309,3 @@ class BaseModel(object):
             var_to_log.append("%s" % v)
         self.writer.writerow(var_to_log)
         self.log_handler.flush()
-
-    @abc.abstractmethod
-    def train_predict(self, matrix, all=False):
-        """
-        所有子类模型都需要实现这个方法
-        :param matrix:
-        :param all:
-        :return:
-        """
-        return

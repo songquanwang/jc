@@ -29,10 +29,10 @@ from sklearn.decomposition import TruncatedSVD
 
 from competition.feat.nlp.nlp_utils import getTFV
 import competition.conf.model_params_conf as config
-from  competition.feat.base_feat import BaseFeat
+from  competition.feat.abstract_base_feat import AbstractBaseFeat
 
 
-class CooccurenceTfidfFeat(BaseFeat):
+class CooccurenceTfidfFeat(AbstractBaseFeat):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):

@@ -32,7 +32,7 @@ import competition.conf.model_params_conf as config
 ## Config ##
 ############
 
-debug = False
+debug = True
 
 ## xgboost
 xgb_random_seed = 2015
@@ -41,7 +41,6 @@ xgb_dmatrix_silent = True
 
 ## sklearn
 skl_random_seed = 2015
-skl_n_jobs = 2
 
 if debug:
     xgb_nthread = 1
@@ -69,6 +68,8 @@ if debug:
     hyperopt_param['rgf_max_evals'] = 1
 else:
     xgb_nthread = 10
+    skl_n_jobs = 2
+    xgb_min_num_round = 5
     xgb_max_num_round = 500
     xgb_num_round_step = 10
     skl_min_n_estimators = 10

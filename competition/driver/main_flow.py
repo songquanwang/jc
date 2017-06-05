@@ -8,6 +8,8 @@
 5.集成训练结果
 """
 __author__ = 'songquanwang'
+
+import numpy as np
 from competition.preprocess.preprocess import preprocess
 from competition.preprocess.init_path import init_path
 from competition.preprocess.kfold import gen_stratified_kfold
@@ -18,7 +20,7 @@ import competition.conf.feat.LSA_svd150_and_Jaccard_coef_Jun14_Low as LSA_svd150
 import competition.conf.feat.svd100_and_bow_Jun23_Low as svd100_and_bow_Jun23_Low
 import competition.conf.feat.svd100_and_bow_Jun27_High as svd100_and_bow_Jun27_High
 
-from competition.feat.base_feat import BaseFeat
+from competition.feat.abstract_base_feat import AbstractBaseFeat
 from competition.feat.basic_tfidf_feat import BasicTfidfFeat
 from competition.feat.cooccurrence_tfidf_feat import CooccurenceTfidfFeat
 from competition.feat.counting_feat import CountingFeat
@@ -57,28 +59,28 @@ def gen_feat():
     # 不仅生成特征文件，还生成四个特征文件名字的文件 在Feat/solution/counting.feat_name等..
     # 生成所有的特征+label
     # 生成basic tfidf feat
-    basic_tfidf_feat = BasicTfidfFeat()
-    basic_tfidf_feat.gen_feat_cv()
-    # 生成coocrrence tfidf feat
-    cooccurence_tfidf_feat = CooccurenceTfidfFeat()
-    cooccurence_tfidf_feat.gen_feat_cv()
-    # 生成 counting feat
-    counting_feat = CountingFeat()
-    counting_feat.gen_feat_cv()
-    # 生成 distance feat
-    distance_feat = DistanceFeat()
-    distance_feat.gen_feat_cv()
-    id_feat = IdFeat()
-    id_feat.gen_feat_cv()
+    # basic_tfidf_feat = BasicTfidfFeat()
+    # basic_tfidf_feat.gen_feat_cv()
+    # # 生成coocrrence tfidf feat
+    # cooccurence_tfidf_feat = CooccurenceTfidfFeat()
+    # cooccurence_tfidf_feat.gen_feat_cv()
+    # # 生成 counting feat
+    # counting_feat = CountingFeat()
+    # counting_feat.gen_feat_cv()
+    # # 生成 distance feat
+    # distance_feat = DistanceFeat()
+    # distance_feat.gen_feat_cv()
+    # id_feat = IdFeat()
+    # id_feat.gen_feat_cv()
 
     # 合并所有的feat 生成四个目录，文件名字 train.feat valid.feat test.feat
-    BaseFeat.extract_feats_cv(LSA_and_stats_feat_Jun09_Low.feat_names, feat_path_name="LSA_and_stats_feat_Jun09")
+    AbstractBaseFeat.extract_feats_cv(LSA_and_stats_feat_Jun09_Low.feat_names, feat_path_name="LSA_and_stats_feat_Jun09")
 
-    BaseFeat.extract_feats_cv(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
+    AbstractBaseFeat.extract_feats_cv(LSA_svd150_and_Jaccard_coef_Jun14_Low.feat_names, feat_path_name="LSA_svd150_and_Jaccard_coef_Jun14")
 
-    BaseFeat.extract_feats_cv(svd100_and_bow_Jun23_Low.feat_names, feat_path_name="svd100_and_bow_Jun23")
+    AbstractBaseFeat.extract_feats_cv(svd100_and_bow_Jun23_Low.feat_names, feat_path_name="svd100_and_bow_Jun23")
 
-    BaseFeat.extract_feats_cv(svd100_and_bow_Jun27_High.feat_names, feat_path_name="svd100_and_bow_Jun27")
+    AbstractBaseFeat.extract_feats_cv(svd100_and_bow_Jun27_High.feat_names, feat_path_name="svd100_and_bow_Jun27")
 
 
 def predict(specified_models):
@@ -97,12 +99,31 @@ def ensemble():
     "../../Feat/solution/LSA_and_stats_feat_Jun09"
     :return:
     """
-    predict_ensemble = PredictEnsemble()
+    model_folder = "./Output"
+    subm_folder = "./Output/Subm"
+    predict_ensemble = PredictEnsemble(model_folder, subm_folder)
     feat_folder = model_library_config.feat_folders[0]
-    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = predict_ensemble.gen_ensemble(feat_folder)
+
+    cdf_test = np.loadtxt("%s/All/test.cdf" % feat_folder, dtype=float)
+    cdf_valid = None
+    bagging_size = 100
+    # 选择全部模型
+    bagging_fraction = 1.0
+    # 剪枝参数没有用到
+    prunning_fraction = 1.
+    bagging_replacement = True
+    init_top_k = 5
+    hypteropt_max_evals = 1
+    w_min = -1
+    w_max = 1
+    subm_prefix = "%s/test.pred.[ensemble_selection]_[Solution]" % (subm_folder)
+    best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight = predict_ensemble.ensemble_model_list_pedicts(feat_folder, cdf_valid, cdf_test,
+                                                                                                                                     subm_prefix,
+                                                                                                                                     hypteropt_max_evals, w_min, w_max, bagging_replacement=bagging_replacement,
+                                                                                                                                     bagging_fraction=bagging_fraction,
+                                                                                                                                     bagging_size=bagging_size, init_top_k=init_top_k, prunning_fraction=prunning_fraction)
     print("best_kappa_mean: %.6f\n best_kappa_std: %.6f\n  best_bagged_model_list: %r \n best_bagged_model_weight: %r \n " % (best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight))
+
 
 if __name__ == "__main__":
     gen_feat()
-
-
