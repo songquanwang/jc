@@ -20,7 +20,7 @@ def create_model(param_space, info_folder, feat_folder, feat_name):
     :param param_space:
     :param feat_folder:
     :param feat_name:
-    :return:
+    :return: param_space, info_folder, feat_folder, feat_name
     """
     if param_space["task"] in ["regression", "ranking", "softmax", "softkappa", "ebc", "cocr"]:
         return GbdtModelImp(param_space, info_folder, feat_folder, feat_name)
@@ -28,9 +28,9 @@ def create_model(param_space, info_folder, feat_folder, feat_name):
         return SklModelImp(param_space, info_folder, feat_folder, feat_name)
     elif param_space["task"] in ["reg_keras_dnn"]:
         return KerasDnnModelImp(param_space, info_folder, feat_folder, feat_name)
-    elif param_space["task"] in ["reg_keras_dnn"]:
+    elif param_space["task"] in ["reg_libfm"]:
         return LibfmModelImp(param_space, info_folder, feat_folder, feat_name)
-    elif param_space["task"] in ["reg_keras_dnn"]:
+    elif param_space["task"] in ["reg_rgf"]:
         return RgfModelImp(param_space, info_folder, feat_folder, feat_name)
     else:
         raise Exception('暂时不支持该模型!')

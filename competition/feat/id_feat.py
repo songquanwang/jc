@@ -32,6 +32,7 @@ class IdFeat(AbstractBaseFeat):
     @staticmethod
     def gen_feat(path, dfTrain, dfTest, mode, feat_names, lb):
         for feat_name in feat_names:
+            # 返回 numpy array or CSR matrix of shape [n_samples, n_classes]
             X_train = lb.fit_transform(dfTrain[feat_name])
             X_test = lb.transform(dfTest[feat_name])
             with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:

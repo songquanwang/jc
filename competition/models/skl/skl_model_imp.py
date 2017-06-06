@@ -56,12 +56,12 @@ class SklModelImp(AbstractBaseModel):
                                    max_features=param['max_features'],
                                    n_jobs=param['n_jobs'],
                                    random_state=param['random_state'])
-        rf.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
-               sample_weight=set_obj.weight_train[set_obj.index_base])
+        rf.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
+               sample_weight=set_obj['weight_train'][set_obj['index_base']])
         if all:
-            pred = rf.predict(set_obj.X_test)
+            pred = rf.predict(set_obj['X_test'])
         else:
-            pred = rf.predict(set_obj.X_valid)
+            pred = rf.predict(set_obj['X_valid'])
 
         return pred
 
@@ -71,12 +71,12 @@ class SklModelImp(AbstractBaseModel):
                                   max_features=param['max_features'],
                                   n_jobs=param['n_jobs'],
                                   random_state=param['random_state'])
-        etr.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
-                sample_weight=set_obj.weight_train[set_obj.index_base])
+        etr.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
+                sample_weight=set_obj['weight_train'][set_obj['index_base']])
         if all:
-            pred = etr.predict(set_obj.X_test)
+            pred = etr.predict(set_obj['X_test'])
         else:
-            pred = etr.predict(set_obj.X_valid)
+            pred = etr.predict(set_obj['X_valid'])
         return pred
 
     def reg_skl_gbm_predict(self, param, set_obj, all=False):
@@ -87,12 +87,12 @@ class SklModelImp(AbstractBaseModel):
                                         max_depth=param['max_depth'],
                                         subsample=param['subsample'],
                                         random_state=param['random_state'])
-        gbm.fit(set_obj.X_train.toarray()[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
-                sample_weight=set_obj.weight_train[set_obj.index_base])
+        gbm.fit(set_obj['X_train'].toarray()[set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
+                sample_weight=set_obj['weight_train'][set_obj['index_base']])
         if all:
-            pred = gbm.predict(set_obj.X_test.toarray())
+            pred = gbm.predict(set_obj['X_test'].toarray())
         else:
-            pred = gbm.predict(set_obj.X_valid.toarray())
+            pred = gbm.predict(set_obj['X_valid'].toarray())
         return pred
 
     def clf_skl_lr_predict(self, param, set_obj, all=False):
@@ -100,14 +100,14 @@ class SklModelImp(AbstractBaseModel):
         lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                 C=param['C'], fit_intercept=True, intercept_scaling=1.0,
                                 class_weight='auto', random_state=param['random_state'])
-        lr.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1)
+        lr.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1)
         if all:
-            pred = lr.predict_proba(set_obj.X_test)
+            pred = lr.predict_proba(set_obj['X_test'])
             w = np.asarray(range(1, model_param_conf.num_of_class + 1))
             pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
         else:
-            pred = lr.predict_proba(set_obj.X_valid)
+            pred = lr.predict_proba(set_obj['X_valid'])
             w = np.asarray(range(1, model_param_conf.num_of_class + 1))
             pred = pred * w[np.newaxis, :]
             pred = np.sum(pred, axis=1)
@@ -115,19 +115,19 @@ class SklModelImp(AbstractBaseModel):
 
     def reg_skl_svr_predict(self, param, set_obj, all=False):
         # regression with sklearn support vector regression
-        X_train = set_obj.X_train.toarray()
+        X_train = set_obj['X_train'].toarray()
         scaler = StandardScaler()
-        X_train[set_obj.index_base] = scaler.fit_transform(X_train[set_obj.index_base])
+        X_train[set_obj['index_base']] = scaler.fit_transform(X_train[set_obj['index_base']])
         svr = SVR(C=param['C'], gamma=param['gamma'], epsilon=param['epsilon'],
                   degree=param['degree'], kernel=param['kernel'])
-        svr.fit(X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
-                sample_weight=set_obj.weight_train[set_obj.index_base])
+        svr.fit(X_train[set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
+                sample_weight=set_obj['weight_train'][set_obj['index_base']])
         if all:
-            X_test = set_obj.X_test.toarray()
+            X_test = set_obj['X_test'].toarray()
             X_test = scaler.transform(X_test)
             pred = svr.predict(X_test)
         else:
-            X_valid = set_obj.X_valid.toarray()
+            X_valid = set_obj['X_valid'].toarray()
             X_valid = scaler.transform(X_valid)
             pred = svr.predict(X_valid)
         return pred
@@ -135,22 +135,22 @@ class SklModelImp(AbstractBaseModel):
     def reg_skl_ridge_predict(self, param, set_obj, all=False):
         # regression with sklearn ridge regression
         ridge = Ridge(alpha=param["alpha"], normalize=True)
-        ridge.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
-                  sample_weight=set_obj.weight_train[set_obj.index_base])
+        ridge.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
+                  sample_weight=set_obj['weight_train'][set_obj['index_base']])
         if all:
-            pred = ridge.predict(set_obj.X_test)
+            pred = ridge.predict(set_obj['X_test'])
         else:
-            pred = ridge.predict(set_obj.X_valid)
+            pred = ridge.predict(set_obj['X_valid'])
         return pred
 
     def reg_skl_lasso_predict(self, param, set_obj, all=False):
         # regression with sklearn lasso
         lasso = Lasso(alpha=param["alpha"], normalize=True)
-        lasso.fit(set_obj.X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1)
+        lasso.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1)
         if all:
-            pred = lasso.predict(set_obj.X_test)
+            pred = lasso.predict(set_obj['X_test'])
         else:
-            pred = lasso.predict(set_obj.X_valid)
+            pred = lasso.predict(set_obj['X_valid'])
         return pred
 
     @staticmethod

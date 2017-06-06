@@ -29,8 +29,6 @@ solution_data = "%s/data" % solution_folder
 solution_info = "%s/info" % solution_folder
 # 基本特征
 solution_feat_base ="%s/base" % solution_feat
-# 合并的特征
-solution_feat_combined ="%s/combined" % solution_feat
 
 feat_folder = solution_feat
 original_train_data_path = "%s/train.csv" % data_folder

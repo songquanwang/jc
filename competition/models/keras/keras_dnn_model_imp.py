@@ -30,14 +30,14 @@ class KerasDnnModelImp(AbstractBaseModel):
         hidden_layers = param['hidden_layers']
         # scale
         scaler = StandardScaler()
-        X_train = set_obj.X_train.toarray()
-        X_train[set_obj.index_base] = scaler.fit_transform(X_train[set_obj.index_base])
+        X_train = set_obj['X_train'].toarray()
+        X_train[set_obj['index_base']] = scaler.fit_transform(X_train[set_obj['index_base']])
         # test or valid to array
         if all:
             # to array
-            X_test = scaler.transform(set_obj.X_test.toarray())
+            X_test = scaler.transform(set_obj['X_test'].toarray())
         else:
-            X_test = scaler.transform(set_obj.X_valid.toarray())
+            X_test = scaler.transform(set_obj['X_valid'].toarray())
 
         while hidden_layers > 0:
             if first:
@@ -60,7 +60,7 @@ class KerasDnnModelImp(AbstractBaseModel):
         # loss
         model.compile(loss='mean_squared_error', optimizer="adam")
         # train
-        model.fit(X_train[set_obj.index_base], set_obj.labels_train[set_obj.index_base] + 1,
+        model.fit(X_train[set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1,
                   nb_epoch=param['nb_epoch'], batch_size=param['batch_size'],
                   testation_split=0, verbose=0)
         # prediction

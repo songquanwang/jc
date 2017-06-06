@@ -20,23 +20,23 @@ class RgfModelImp(AbstractBaseModel):
         :return:
         """
         # to array
-        X_train = set_obj.X_train.toarray()
-        train_x_fn = set_obj.feat_train_path + ".x"
-        train_y_fn = set_obj.feat_train_path + ".y"
+        X_train = set_obj['X_train'].toarray()
+        train_x_fn = set_obj['feat_train_path'] + ".x"
+        train_y_fn = set_obj['feat_train_path'] + ".y"
         model_fn_prefix = "rgf_model"
-        np.savetxt(train_x_fn, X_train[set_obj.index_base], fmt="%.6f", delimiter='\t')
-        np.savetxt(train_y_fn, set_obj.labels_train[set_obj.index_base], fmt="%d", delimiter='\t')
+        np.savetxt(train_x_fn, X_train[set_obj['index_base']], fmt="%.6f", delimiter='\t')
+        np.savetxt(train_y_fn, set_obj['labels_train'][set_obj['index_base']], fmt="%d", delimiter='\t')
 
         if all:
-            X_test = set_obj.X_test.toarray()
-            test_x_fn = set_obj.feat_test_path + ".x"
-            test_pred_fn = set_obj.feat_test_path + ".pred"
-            # np.savetxt(test_y_fn, set_obj.labels_test, fmt="%d", delimiter='\t')
+            X_test = set_obj['X_test'].toarray()
+            test_x_fn = set_obj['feat_test_path'] + ".x"
+            test_pred_fn = set_obj['feat_test_path'] + ".pred"
+            # np.savetxt(test_y_fn, set_obj['labels_test, fmt="%d", delimiter='\t')
         else:
-            X_test = set_obj.X_valid.toarray()
-            test_x_fn = set_obj.feat_valid_path + ".x"
-            test_pred_fn = set_obj.feat_valid_path + ".pred"
-            # np.savetxt(valid_y_fn, set_obj.labels_valid, fmt="%d", delimiter='\t')
+            X_test = set_obj['X_valid'].toarray()
+            test_x_fn = set_obj['feat_valid_path'] + ".x"
+            test_pred_fn = set_obj['feat_valid_path'] + ".pred"
+            # np.savetxt(valid_y_fn, set_obj['labels_valid, fmt="%d", delimiter='\t')
         np.savetxt(test_x_fn, X_test, fmt="%.6f", delimiter='\t')
         pars = [
             "train_x_fn=", train_x_fn, "\n",
