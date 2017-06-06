@@ -67,7 +67,9 @@ class AbstractBaseModel(ModelInter):
         matrix['cdf_valid_path'] = "%s/valid.cdf" % info_path
 
     def get_output_all_path(self, feat_folder, feat_name, kappa_cv_mean, kappa_cv_std):
-        save_path = "%s/All" % feat_folder
+        save_path = "%s/All/pred" % feat_folder
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
         subm_path = "%s/Subm" % feat_folder
         if not os.path.exists(subm_path):
             os.makedirs(subm_path)
