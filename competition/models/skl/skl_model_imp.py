@@ -99,7 +99,7 @@ class SklModelImp(AbstractBaseModel):
         # classification with sklearn logistic regression   只寻找一个参数的最优参数
         lr = LogisticRegression(penalty="l2", dual=True, tol=1e-5,
                                 C=param['C'], fit_intercept=True, intercept_scaling=1.0,
-                                class_weight='auto', random_state=param['random_state'])
+                                class_weight='balanced', random_state=param['random_state'])
         lr.fit(set_obj['X_train'][set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1)
         if all:
             pred = lr.predict_proba(set_obj['X_test'])

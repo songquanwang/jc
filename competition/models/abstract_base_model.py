@@ -157,20 +157,18 @@ class AbstractBaseModel(ModelInter):
         return matrix
 
     def out_put_all(self, feat_folder, feat_name, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank):
-
-        raw_pred_test_path, rank_pred_test_path, subm_path = self.get_output_all_path(feat_folder, feat_name, kappa_cv_mean, kappa_cv_std)
         # write
         output = pd.DataFrame({"id": self.all_matrix['id_test'], "prediction": pred_raw})
-        output.to_csv(raw_pred_test_path, index=False)
+        output.to_csv(self.all_matrix['raw_pred_test_path'], index=False)
 
         # write
         output = pd.DataFrame({"id": self.all_matrix['id_test'], "prediction": pred_rank})
-        output.to_csv(rank_pred_test_path, index=False)
+        output.to_csv(self.all_matrix['rank_pred_test_path'], index=False)
 
         # write score pred--原来代码有错：应该是pred_raw 因为pred_raw是多次装袋后平均预测值，不应该是其中一次装袋的预测值
         pred_score = utils.getScore(pred_raw, self.all_matrix['cdf_test'])
         output = pd.DataFrame({"id": self.all_matrix['id_test'], "prediction": pred_score})
-        output.to_csv(subm_path, index=False)
+        output.to_csv(self.all_matrix['subm_path'], index=False)
 
     def out_put_run_fold(self, run, fold, feat_folder, feat_name, X_train, Y_valid, pred_raw, pred_rank, kappa_valid):
         """
@@ -186,13 +184,13 @@ class AbstractBaseModel(ModelInter):
         :param pred_rank:
         :return:
         """
-        raw_pred_valid_path, rank_pred_valid_path = self.get_output_run_fold_path(feat_folder, feat_name, run, fold)
+        matrix = self.run_fold_matrix[run - 1, fold - 1]
         # save this prediction
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_raw})
-        dfPred.to_csv(raw_pred_valid_path, index=False, header=True, columns=["target", "prediction"])
+        dfPred.to_csv(matrix['raw_pred_valid_path'], index=False, header=True, columns=["target", "prediction"])
         # save this prediction
         dfPred = pd.DataFrame({"target": Y_valid, "prediction": pred_rank})
-        dfPred.to_csv(rank_pred_valid_path, index=False, header=True, columns=["target", "prediction"])
+        dfPred.to_csv(matrix['rank_pred_valid_path'], index=False, header=True, columns=["target", "prediction"])
 
     def gen_bagging(self, param, set_obj, all):
         """
@@ -256,6 +254,8 @@ class AbstractBaseModel(ModelInter):
             for fold in range(1, config.n_folds + 1):
                 # 生成 run_fold_set_obj
                 set_obj = self.gen_set_obj_run_fold(run, fold, self.run_fold_matrix[run - 1, fold - 1])
+                # 获取输出目录赋值给set_obj
+                set_obj['raw_pred_valid_path'], set_obj['rank_pred_valid_path'] = self.get_output_run_fold_path(feat_folder, feat_name, run, fold)
                 # bagging结果
                 pred_raw, pred_rank, kappa_valid = self.gen_bagging(param, set_obj, all=False)
                 # 输出文件
@@ -269,6 +269,8 @@ class AbstractBaseModel(ModelInter):
             print(" Std: %.6f" % kappa_cv_std)
         # all result
         all_set_obj = self.gen_set_obj_all(self.all_matrix)
+        # 输出路径赋值给all_matrix
+        self.all_matrix['raw_pred_test_path'], self.all_matrix['rank_pred_test_path'], self.all_matrix['subm_path'] = self.get_output_all_path(feat_folder, feat_name, kappa_cv_mean, kappa_cv_std)
         pred_raw, pred_rank = self.gen_bagging(param, all_set_obj, all=True)
         # 生成提交结果
         self.out_put_all(feat_folder, feat_name, kappa_cv_mean, kappa_cv_std, pred_raw, pred_rank)

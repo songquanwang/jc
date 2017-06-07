@@ -10,8 +10,8 @@ ebc_hard_threshold = False
 verbose_level = 1
 
 
-# 模型算法包路径 libfm rgf
-libfm_exe = "./libfm-1.40.windows/libfm.exe"
+# 模型算法包路径 libfm rgf 必须\ 用window下用/不行
+libfm_exe = ".\libfm-1.40.windows\libfm.exe"
 call_exe = "./rgf1.2/test/call_exe.pl"
 rgf_exe = "./rgf1.2/bin/rgf.exe"
 

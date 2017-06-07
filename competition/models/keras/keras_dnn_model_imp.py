@@ -12,15 +12,19 @@ from keras.layers.advanced_activations import PReLU
 
 
 class KerasDnnModelImp(AbstractBaseModel):
-    def __init__(self, param_space, info_folder,feat_folder, feat_name):
-        super(KerasDnnModelImp, self).__init__(param_space, info_folder,feat_folder, feat_name)
+    def __init__(self, param_space, info_folder, feat_folder, feat_name):
+        super(KerasDnnModelImp, self).__init__(param_space, info_folder, feat_folder, feat_name)
 
-    def train_predict(self,param, set_obj, all=False):
+    def train_predict_bkp(self, param, set_obj, all=False):
         """
         数据训练
         :param train_end_date:
         :return:
         """
+        # scale
+        scaler = StandardScaler()
+        X_train = set_obj['X_train'].toarray()
+        X_train[set_obj['index_base']] = scaler.fit_transform(X_train[set_obj['index_base']])
         # regression with keras' deep neural networks
         model = Sequential()
         # input layer
@@ -28,10 +32,6 @@ class KerasDnnModelImp(AbstractBaseModel):
         # hidden layers
         first = True
         hidden_layers = param['hidden_layers']
-        # scale
-        scaler = StandardScaler()
-        X_train = set_obj['X_train'].toarray()
-        X_train[set_obj['index_base']] = scaler.fit_transform(X_train[set_obj['index_base']])
         # test or valid to array
         if all:
             # to array
@@ -68,6 +68,38 @@ class KerasDnnModelImp(AbstractBaseModel):
         pred.shape = (X_test.shape[0],)
 
         return pred
+
+    def train_predict(self, param, set_obj, all=False):
+        """
+        数据训练
+        :param train_end_date:
+        :return:
+        """
+        # scale
+        scaler = StandardScaler()
+        X_train = set_obj['X_train'].toarray()
+        X_train[set_obj['index_base']] = scaler.fit_transform(X_train[set_obj['index_base']])
+        # test or valid to array
+        if all:
+            # to array
+            X_test = scaler.transform(set_obj['X_test'].toarray())
+        else:
+            X_test = scaler.transform(set_obj['X_valid'].toarray())
+        # regression with keras' deep neural networks
+        model = Sequential()
+        model.add(Dense(64, activation='relu', input_dim=X_train.shape[1]))
+        model.add(Dropout(0.5))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(1, activation='linear'))
+
+        # sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+        model.compile(loss='mean_squared_error', optimizer="adam", metrics=['accuracy'])
+
+        model.fit(X_train[set_obj['index_base']], set_obj['labels_train'][set_obj['index_base']] + 1, epochs=20, batch_size=128)
+        # prediction
+        pred = model.predict(X_test, verbose=0)
+        pred.shape = (X_test.shape[0],)
 
     @staticmethod
     def get_id():
