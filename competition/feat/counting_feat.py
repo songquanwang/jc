@@ -100,7 +100,7 @@ class CountingFeat(AbstractBaseFeat):
             for obs_name in feat_names:
                 for target_name in feat_names:
                     if target_name != obs_name:
-                        ## query
+                        # query 交集
                         df["count_of_%s_%s_in_%s" % (obs_name, gram, target_name)] = list(df.apply(lambda x: sum([1. for w in x[obs_name + "_" + gram] if w in set(x[target_name + "_" + gram])]), axis=1))
                         df["ratio_of_%s_%s_in_%s" % (obs_name, gram, target_name)] = map(utils.try_divide, df["count_of_%s_%s_in_%s" % (obs_name, gram, target_name)], df["count_of_%s_%s" % (obs_name, gram)])
 
@@ -114,6 +114,7 @@ class CountingFeat(AbstractBaseFeat):
     def extract_interset_word_pos_feat( df, feat_names, grams):
         """
         intersect word position feat
+        一个字段的词根，在另个字段的词根 的位置[最小、最大、中位数、平均值、标准差]
         :param df:
         :param feat_names:
         :param grams:

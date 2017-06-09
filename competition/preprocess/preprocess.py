@@ -53,7 +53,7 @@ def preprocess():
     dfTest["median_relevance"] = np.ones((num_test))
     dfTest["relevance_variance"] = np.zeros((num_test))
 
-    ## insert sample index
+    # insert sample index
     dfTrain["index"] = np.arange(num_train)
     dfTest["index"] = np.arange(num_test)
 
@@ -67,12 +67,13 @@ def preprocess():
     for i, q in enumerate(np.unique(dfTrain["query"]), start=1):
         qid_dict[q] = i
 
-    ## insert query id
+    # insert query id
     dfTrain["qid"] = map(lambda q: qid_dict[q], dfTrain["query"])
     dfTest["qid"] = map(lambda q: qid_dict[q], dfTest["query"])
 
     ## clean text
     clean = lambda line: clean_text(line, drop_html_flag=config.drop_html_flag)
+    # axis =1 传入每行(多个列)
     dfTrain = dfTrain.apply(clean, axis=1)
     dfTest = dfTest.apply(clean, axis=1)
 

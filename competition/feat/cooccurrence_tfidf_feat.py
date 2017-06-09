@@ -3,6 +3,8 @@
 __file__
 
     genFeat_cooccurrence_tfidf.py
+    1.把query title description 三个列生成 一元、二元、三元 9个特征
+    2.两两特征词根数组笛卡尔积，生成新特征
 
 __description__
 
@@ -110,8 +112,9 @@ class CooccurenceTfidfFeat(AbstractBaseFeat):
         new_feat_names = []
         for feat_name, column_name in zip(feat_names, self.column_names):
             print "generate %s feat" % feat_name
-            ## tfidf
+            # tfidf
             tfv = getTFV(ngram_range=self.ngram_range)
+            # 共6906个单词的字典
             X_tfidf_train = tfv.fit_transform(dfTrain[column_name])
             X_tfidf_test = tfv.transform(dfTest[column_name])
 
@@ -120,7 +123,7 @@ class CooccurenceTfidfFeat(AbstractBaseFeat):
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
                 cPickle.dump(X_tfidf_test, f, -1)
 
-            ## svd
+            # svd 提取100个主成分
             svd = TruncatedSVD(n_components=self.svd_n_components, n_iter=15)
             X_svd_train = svd.fit_transform(X_tfidf_train)
             X_svd_test = svd.transform(X_tfidf_test)

@@ -77,7 +77,7 @@ class BasicTfidfFeat(AbstractBaseFeat):
     @staticmethod
     def cosine_sim(x, y):
         """
-        计算余弦相似性距离
+        计算余弦相似性距离(夹角越小，相似度越高)
         :param x:
         :param y:
         :return:
@@ -95,10 +95,10 @@ class BasicTfidfFeat(AbstractBaseFeat):
     @staticmethod
     def pairwise_dist(X_test, X_train, dist_metric):
         if dist_metric == "cosine":
-            # sim 0-1 1完全相同
+            # sim 0-1 1完全相同 ；余弦距离也是越大越远 ，用1减后 变成相似度
             sim = 1. - pairwise_distances(X_test, X_train, metric=dist_metric, n_jobs=1)
         elif dist_metric == "euclidean":
-            # 返回xtest行 xtrain列的array
+            # 返回xtest行 xtrain列的array 欧式距离，越大越远
             sim = pairwise_distances(X_test, X_train, metric=dist_metric, n_jobs=1)
         return sim
 
@@ -107,7 +107,7 @@ class BasicTfidfFeat(AbstractBaseFeat):
         根据vocabulary_type 生成
         :param vocabulary_type:common  individual
         :param vec_type:tfidf tfidf
-        :return:
+        :return: vocabulary_ dict类型，字典
         """
         # 生成 vocabulary
         if self.vocabulary_type == "common":
@@ -115,7 +115,9 @@ class BasicTfidfFeat(AbstractBaseFeat):
                 vec = getTFV(ngram_range=self.ngram_range)
             elif vec_type == "bow":
                 vec = getBOW(ngram_range=self.ngram_range)
+            # 把所有的文本 fit，提取词库
             vec.fit(dfTrain["all_text"])
+            # 62752
             vocabulary = vec.vocabulary_
         elif self.vocabulary_type == "individual":
             vocabulary = None
@@ -141,14 +143,14 @@ class BasicTfidfFeat(AbstractBaseFeat):
         new_feat_names = []
         if column_name in ["product_title", "product_description"]:
             print "generate %s stats feat for %s" % (vec_type, column_name)
-            ## train
+            # 计算train 内部每行数据之间(每行)的 距离
             cosine_sim_stats_feat_by_relevance_train = self.generate_dist_stats_feat("cosine", X_train, dfTrain["id"].values, X_train, dfTrain["id"].values, relevance_indices_dict)
             cosine_sim_stats_feat_by_query_relevance_train = self.generate_dist_stats_feat("cosine", X_train, dfTrain["id"].values, X_train, dfTrain["id"].values, query_relevance_indices_dict, dfTrain["qid"].values)
             with open("%s/train.%s_cosine_sim_stats_feat_by_relevance.feat.pkl" % (path, feat_name), "wb") as f:
                 cPickle.dump(cosine_sim_stats_feat_by_relevance_train, f, -1)
             with open("%s/train.%s_cosine_sim_stats_feat_by_query_relevance.feat.pkl" % (path, feat_name), "wb") as f:
                 cPickle.dump(cosine_sim_stats_feat_by_query_relevance_train, f, -1)
-            ## test
+            #计算 test 内部每行数据之间(每行)的 距离
             cosine_sim_stats_feat_by_relevance_test = self.generate_dist_stats_feat("cosine", X_train, dfTrain["id"].values, X_test, dfTest["id"].values, relevance_indices_dict)
             cosine_sim_stats_feat_by_query_relevance_test = self.generate_dist_stats_feat("cosine", X_train, dfTrain["id"].values, X_test, dfTest["id"].values, query_relevance_indices_dict, dfTest["qid"].values)
             with open("%s/%s.%s_cosine_sim_stats_feat_by_relevance.feat.pkl" % (path, mode, feat_name), "wb") as f:
@@ -185,7 +187,7 @@ class BasicTfidfFeat(AbstractBaseFeat):
             # 生成basic bow tfidf 特征
             ##########################
             print "generate %s feat for %s" % (vec_type, column_name)
-
+            # 不同的vec_type 已经体现在feat_name上，所以不用区分
             with open("%s/train.%s.feat.pkl" % (path, feat_name), "wb") as f:
                 cPickle.dump(X_train, f, -1)
             with open("%s/%s.%s.feat.pkl" % (path, mode, feat_name), "wb") as f:
@@ -204,10 +206,10 @@ class BasicTfidfFeat(AbstractBaseFeat):
         各特征之间的相似度
         :param path:
         :param feat_names:
-            feat_names = ["query", "title", "description"]
+            columns_names = ["query", "title", "description"]
             vocabulary_type ="common"
             vec_type =["tfidf", "bow"]
-            feat_names = [name + "_%s_%s_vocabulary" % (vec_type, vocabulary_type) for name in feat_names]
+            feat_names = [name + "_%s_%s_vocabulary" % (vec_type, vocabulary_type) for name in columns_names]
         :param mode:"valid"、"test"
         :param new_feat_names:
         :return:
@@ -447,7 +449,7 @@ class BasicTfidfFeat(AbstractBaseFeat):
             self.relevance_indices_dict = self.get_sample_indices_by_relevance(dfTrain)
             # 返回 类别-qid为键，序号数组为值的字典
             self.query_relevance_indices_dict = self.get_sample_indices_by_relevance(dfTrain, "qid")
-
+        # tfidf bow
         feat_list = self.gen_bow_tfidf_by_feat_column_names(path, dfTrain, dfTest, vec_type, mode, vocabulary, feat_names)
         new_feat_names.extend(feat_list)
 

@@ -248,6 +248,7 @@ class AbstractBaseModel(ModelInter):
         :param trial_counter:
         :return:
         """
+        self.trial_counter += 1
         # 定义kappa交叉验证结构
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
         for run in range(1, config.n_runs + 1):
@@ -301,7 +302,6 @@ class AbstractBaseModel(ModelInter):
         :param kappa_cv_std:
         :return:
         """
-        self.trial_counter += 1
         # convert integer feat
         for f in model_conf.int_feat:
             if param.has_key(f):

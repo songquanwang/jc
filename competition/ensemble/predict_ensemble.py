@@ -15,9 +15,10 @@ __author__
 """
 
 import abc
+import os
+
 import numpy as np
 import pandas as pd
-import os
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 from competition.utils.utils import getScore, getTestScore
@@ -54,7 +55,7 @@ class PredictEnsemble(EnsembleInter):
                 # 取出前十行 也就是当前模型的前十名尝试累加到数组
                 ids = dfLog.iloc[:ind]["trial_counter"]
                 # print dfLog[:ind]
-                self.model_list += ["%s_[Id@%d]" % (feat_name, id) for id in ids]
+                self.model_list += ["%s_[Id@%d]" % (feat_name, id-1) for id in ids]
             except:
                 pass
         # 初始化
@@ -83,7 +84,7 @@ class PredictEnsemble(EnsembleInter):
             # 多个模型集成结果(All预测结果)
             for model, w in zip(best_bagged_model_list[bagging_iter], best_bagged_model_weight[bagging_iter]):
                 iter += 1
-                pred_file = "%s/All/test.pred.%s.csv" % (self.model_folder, model)
+                pred_file = "%s/All/pred/test.pred.%s.csv" % (self.model_folder, model)
                 # 获取当前模型预测值
                 this_p_valid = pd.read_csv(pred_file, dtype=float)["prediction"].values
                 this_w = w
@@ -142,23 +143,23 @@ class PredictEnsemble(EnsembleInter):
             kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
             for run in range(config.n_runs):
                 for fold in range(config.n_folds):
-                    path = "%s/Run%d/Fold%d" % (self.model_folder, run + 1, fold + 1)
+                    path = "%s/Run%d/Fold%d/pred" % (self.model_folder, run + 1, fold + 1)
                     pred_file = "%s/valid.pred.%s.csv" % (path, model)
-                    cdf_file = "%s/Run%d/Fold%d/valid.cdf" % (feat_folder, run + 1, fold + 1)
+                    cdf_file = "%s/Run%d/Fold%d/valid.cdf" % (config.solution_info, run + 1, fold + 1)
                     this_p_valid = pd.read_csv(pred_file, dtype=float)
                     # 这些指标只需要执行一次就行了，每个模型都一样
                     if i == 0:
                         # 记录run-fold的行数
                         num_valid_matrix[run][fold] = this_p_valid.shape[0]
                         # 记录run-fold的真实值
-                        y_list_valid[run, fold, :self.num_valid_matrix[run][fold]] = this_p_valid["target"].values
+                        y_list_valid[run, fold, :num_valid_matrix[run][fold]] = this_p_valid["target"].values
                         # load cdf
                         if cdf == None:
                             cdf_list_valid[run, fold, :] = np.loadtxt(cdf_file, dtype=float)
                         else:
                             cdf_list_valid[run, fold, :] = cdf
                         score = getScore(this_p_valid["prediction"].values, cdf_list_valid[run, fold, :])
-                        kappa_cv[run][fold] = quadratic_weighted_kappa(score, self.y_list_valid[run, fold, :self.num_valid_matrix[run][fold]])
+                        kappa_cv[run][fold] = quadratic_weighted_kappa(score, y_list_valid[run, fold, :num_valid_matrix[run][fold]])
                     # 记录model-run-fold的预测值数组
                     pred_list_valid[self.model2idx[model], run, fold, :this_p_valid.shape[0]] = this_p_valid["prediction"].values
             print("kappa: %.6f" % np.mean(kappa_cv))
@@ -182,7 +183,7 @@ class PredictEnsemble(EnsembleInter):
         """
         best_model_list = []
         best_model_weight = []
-        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, num_valid_matrix), dtype=float)
+        p_ens_list_valid_topk = np.zeros((config.n_runs, config.n_folds, self.max_num_valid), dtype=float)
         w_ens, this_w = 0, 1.0
         cnt = 0
         kappa_cv = np.zeros((config.n_runs, config.n_folds), dtype=float)
@@ -258,7 +259,7 @@ class PredictEnsemble(EnsembleInter):
                 'weight_current_model': hp.uniform('weight_current_model', w_min, w_max)
             }
             # topk权重是1 找另一个最佳权重
-            obj = lambda param: self.ensemble_selection_obj(param, p_ens_list_valid_topk, 1., this_p_list_valid)
+            obj = lambda param: self.ensemble_selection_obj( param, p_ens_list_valid_topk, 1., this_p_list_valid, y_list_valid, cdf_list_valid, num_valid_matrix)
             best_params = fmin(obj, param_space, algo=tpe.suggest, trials=trials, max_evals=hypteropt_max_evals)
             # 返回当前模型权重
             this_w = best_params['weight_current_model']
@@ -317,10 +318,10 @@ class PredictEnsemble(EnsembleInter):
             best_model_list.append(best_model)
             best_model_weight.append(best_weight)
             # 最优模型
-            this_p_list_valid = self.pred_list_valid[self.model2idx[best_model]]
+            this_p_list_valid = pred_list_valid[self.model2idx[best_model]]
             for run in range(config.n_runs):
                 for fold in range(config.n_folds):
-                    num_valid = self.num_valid_matrix[run][fold]
+                    num_valid = num_valid_matrix[run][fold]
                     # 历史累计集成结果和当前（比历史上最佳好的模型）的集成结果
                     p_ens_list_valid_topk[run, fold, :num_valid] = (w_ens * p_ens_list_valid_topk[run, fold, :num_valid] + best_weight * this_p_list_valid[run, fold, :num_valid]) / (w_ens + best_weight)
             best_model = None
@@ -353,9 +354,9 @@ class PredictEnsemble(EnsembleInter):
         print("Bag %d, kappa: %.6f (%.6f)" % (bagging_iter + 1, np.mean(kappa_cv), np.std(kappa_cv)))
         return kappa_cv, cutoff, p_ens_list_valid
 
-    def ensemble_model_list_pedicts(self, feat_folder,   cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10,
-                           init_top_k=5,
-                           prunning_fraction=0.2):
+    def ensemble_model_list_pedicts(self, feat_folder, cdf, cdf_test, subm_prefix, hypteropt_max_evals=10, w_min=-1., w_max=1., bagging_replacement=False, bagging_fraction=0.5, bagging_size=10,
+                                    init_top_k=5,
+                                    prunning_fraction=0.2):
         """
 
         :param feat_folder:
@@ -411,12 +412,11 @@ class PredictEnsemble(EnsembleInter):
             best_bagged_model_weight[bagging_iter] = best_model_weight
 
             # save the current prediction 0-bagging个预测结果
-            output = self.ensemble_bagging_models_prediction(self.model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test)
+            output = self.ensemble_bagging_models_prediction( best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test)
             sub_file = "%s_[InitTopK%d]_[BaggingSize%d]_[BaggingFraction%s]_[Mean%.6f]_[Std%.6f]_cdf.csv" % (subm_prefix, init_top_k, bagging_iter + 1, bagging_fraction, best_kappa_mean, best_kappa_std)
             output.to_csv(sub_file, index=False)
             # use cutoff
-            output = self.ensemble_bagging_models_prediction(self.model_folder, best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test, cutoff)
+            output = self.ensemble_bagging_models_prediction(best_bagged_model_list[:(bagging_iter + 1)], best_bagged_model_weight[:(bagging_iter + 1)], cdf_test, cutoff)
             sub_file = "%s_[InitTopK%d]_[BaggingSize%d]_[BaggingFraction%s]_[Mean%.6f]_[Std%.6f]_cutoff.csv" % (subm_prefix, init_top_k, bagging_iter + 1, bagging_fraction, best_kappa_mean, best_kappa_std)
             output.to_csv(sub_file, index=False)
         return best_kappa_mean, best_kappa_std, best_bagged_model_list, best_bagged_model_weight
-

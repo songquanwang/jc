@@ -28,6 +28,7 @@ from competition.feat.distance_feat import DistanceFeat
 from competition.feat.id_feat import IdFeat
 
 import competition.conf.model_library_config as model_library_config
+import competition.conf.model_params_conf as config
 import competition.models.model_manager as model_manager
 
 from competition.ensemble.predict_ensemble import PredictEnsemble
@@ -116,12 +117,11 @@ def ensemble():
     "../../Feat/solution/LSA_and_stats_feat_Jun09"
     :return:
     """
-    model_folder = "./Output"
-    subm_folder = "./Output/Subm"
-    predict_ensemble = PredictEnsemble(model_folder, subm_folder)
     feat_folder = model_library_config.feat_folders[0]
-
-    cdf_test = np.loadtxt("%s/All/test.cdf" % feat_folder, dtype=float)
+    model_folder = feat_folder
+    subm_folder = "./Output/ensenbled_subm"
+    predict_ensemble = PredictEnsemble(model_folder, subm_folder)
+    cdf_test = np.loadtxt("%s/All/test.cdf" % config.solution_info, dtype=float)
     cdf_valid = None
     bagging_size = 100
     # 选择全部模型
@@ -144,4 +144,4 @@ def ensemble():
 
 if __name__ == "__main__":
     # gen_feat()
-    predict()
+    ensemble()

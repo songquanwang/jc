@@ -23,8 +23,8 @@ stratified_label = "query"
 # 路径配置
 data_folder = "./Data"
 solution_folder = "./solution1"
-solution_feat = "%s/feat" % solution_folder
-solution_output = "%s/output" % solution_folder
+solution_feat = "%s/Feat" % solution_folder
+solution_output = "%s/Output" % solution_folder
 solution_data = "%s/data" % solution_folder
 solution_info = "%s/info" % solution_folder
 # 基本特征

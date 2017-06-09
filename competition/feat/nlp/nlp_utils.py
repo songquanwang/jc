@@ -8,6 +8,9 @@ __description__
 
     This file provides functions to perform NLP task, e.g., TF-IDF and POS tagging.
 
+    TF-IDF:
+    BOW : Bag-of-words model 词袋模型
+
 __author__
 
     songquanwang
@@ -53,25 +56,18 @@ def stem_tokens(tokens, stemmer):
 #############
 ## POS Tag ##
 #############
+# (?u)就是启用Unicode dependent特性；用户匹配带汉字的文本
+# java 正则表达式例如: \w ，在字符串中被当成转移字符，所以加上\\w;python中r（raw string）可以把字符串当成普通字符处理
 token_pattern = r"(?u)\b\w\w+\b"
 
 
-# token_pattern = r'\w{1,}'
-# token_pattern = r"\w+"
-# token_pattern = r"[\w']+"
-
-
-
-def pos_tag_text(line,
-                 token_pattern=token_pattern,
-                 exclude_stopword=config.cooccurrence_word_exclude_stopword,
-                 encode_digit=False):
+def pos_tag_text(line, token_pattern=token_pattern, exclude_stopword=config.cooccurrence_word_exclude_stopword, encode_digit=False):
     token_pattern = re.compile(token_pattern, flags=re.UNICODE | re.LOCALE)
     for name in ["query", "product_title", "product_description"]:
         l = line[name]
-        ## tokenize
+        # tokenize 分词 只能识别英文，中文无法识别
         tokens = [x.lower() for x in token_pattern.findall(l)]
-        ## stem
+        # stem 转成词根（转成unicode）
         tokens = stem_tokens(tokens, english_stemmer)
         if exclude_stopword:
             tokens = [x for x in tokens if x not in stopwords]
@@ -92,10 +88,6 @@ class StemmedTfidfVectorizer(TfidfVectorizer):
         return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
 
 
-token_pattern = r"(?u)\b\w\w+\b"
-# token_pattern = r'\w{1,}'
-# token_pattern = r"\w+"
-# token_pattern = r"[\w']+"
 tfidf__norm = "l2"
 tfidf__max_df = 0.75
 tfidf__min_df = 3
@@ -124,10 +116,6 @@ class StemmedCountVectorizer(CountVectorizer):
         return lambda doc: (english_stemmer.stem(w) for w in analyzer(doc))
 
 
-token_pattern = r"(?u)\b\w\w+\b"
-# token_pattern = r'\w{1,}'
-# token_pattern = r"\w+"
-# token_pattern = r"[\w']+"
 bow__max_df = 0.75
 bow__min_df = 3
 
@@ -150,7 +138,7 @@ def getBOW(token_pattern=token_pattern,
 ################
 ## synonym replacer
 replacer = CsvWordReplacer('%s/synonyms.csv' % config.data_folder)
-#replacer = CsvWordReplacer('../../Data/synonyms.csv')
+# replacer = CsvWordReplacer('../../Data/synonyms.csv')
 ## other replace dict
 ## such dict is found by exploring the training data
 replace_dict = {
@@ -218,6 +206,7 @@ def clean_text(line, drop_html_flag=False):
         ## replace synonyms
         l = replacer.replace(l)
         l = " ".join(l)
+        # 覆盖原来的列
         line[name] = l
     return line
 
@@ -229,18 +218,13 @@ def drop_html(html):
     return BeautifulSoup(html).get_text(separator=" ")
 
 
-# (?u)就是启用Unicode dependent特性；用户匹配带汉字的文本
-# java 正则表达式例如: \w ，在字符串中被当成转移字符，所以加上\\w;python中r（raw string）可以把字符串当成普通字符处理
-token_pattern = r"(?u)\b\w\w+\b"
-
-
 # token_pattern = r'\w{1,}'
 # token_pattern = r"\w+"
 # token_pattern = r"[\w']+"
 def preprocess_data(line, token_pattern=token_pattern, exclude_stopword=config.cooccurrence_word_exclude_stopword,
                     encode_digit=False):
     """
-    Pre-process data 预处理每一行
+    Pre-process data 预处理每一行，返回处理完后的字根数组
     1.分词
     2.词根
     3.去除停用词
@@ -251,13 +235,11 @@ def preprocess_data(line, token_pattern=token_pattern, exclude_stopword=config.c
     :return:
     """
     token_pattern = re.compile(token_pattern, flags=re.UNICODE | re.LOCALE)
-    ## tokenize 分词
+    # tokenize 分词
     tokens = [x.lower() for x in token_pattern.findall(line)]
-    ## stem 词根
+    # stem 词根
     tokens_stemmed = stem_tokens(tokens, english_stemmer)
-    # 停用词
+    # 去掉停用词
     if exclude_stopword:
         tokens_stemmed = [x for x in tokens_stemmed if x not in stopwords]
     return tokens_stemmed
-
-
