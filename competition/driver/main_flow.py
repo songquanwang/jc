@@ -119,7 +119,7 @@ def ensemble():
     """
     feat_folder = model_library_config.feat_folders[0]
     model_folder = feat_folder
-    subm_folder = "./Output/ensenbled_subm"
+    subm_folder = "./solution1/Output/ensenbled_subm"
     predict_ensemble = PredictEnsemble(model_folder, subm_folder)
     cdf_test = np.loadtxt("%s/All/test.cdf" % config.solution_info, dtype=float)
     cdf_valid = None

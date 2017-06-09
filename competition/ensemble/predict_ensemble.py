@@ -50,7 +50,7 @@ class PredictEnsemble(EnsembleInter):
                 # 读取模型平均参数
                 dfLog = pd.read_csv(log_file)
                 # kappa mean降序排列
-                dfLog.sort("kappa_mean", ascending=False, inplace=True)
+                dfLog.sort_values("kappa_mean", ascending=False, inplace=True)
                 ind = np.min([id_size, dfLog.shape[0]])
                 # 取出前十行 也就是当前模型的前十名尝试累加到数组
                 ids = dfLog.iloc[:ind]["trial_counter"]
