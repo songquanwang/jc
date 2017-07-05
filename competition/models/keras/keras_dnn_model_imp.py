@@ -9,8 +9,15 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import PReLU
+from keras.layers import Input, Dense
+from keras.models import Model
 
+# This returns a tensor
+inputs = Input(shape=(784,))
 
+x = Dense(64, activation='relu')(inputs)
+x = Dense(64, activation='relu')(x)
+predictions = Dense(10, activation='softmax')(x)
 class KerasDnnModelImp(AbstractBaseModel):
     def __init__(self, param_space, info_folder, feat_folder, feat_name):
         super(KerasDnnModelImp, self).__init__(param_space, info_folder, feat_folder, feat_name)
