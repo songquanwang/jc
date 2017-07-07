@@ -20,7 +20,7 @@ import imdb
 datasets = {'imdb': (imdb.load_data, imdb.prepare_data)}
 
 # Set the random number generators' seeds for consistency
-SEED = 123
+SEED = 123##
 numpy.random.seed(SEED)
 
 def numpy_floatX(data):
