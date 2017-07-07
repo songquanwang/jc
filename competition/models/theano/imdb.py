@@ -22,7 +22,7 @@ def prepare_data(seqs, labels, maxlen=None):
     """
     # x: a list of sentences
     lengths = [len(s) for s in seqs]
-
+    # 只要长度小于maxlen
     if maxlen is not None:
         new_seqs = []
         new_labels = []
@@ -38,12 +38,14 @@ def prepare_data(seqs, labels, maxlen=None):
 
         if len(lengths) < 1:
             return None, None, None
-
+    # 剩余数据条数、最大长度
     n_samples = len(seqs)
     maxlen = numpy.max(lengths)
-
+    # 每列一个句子
     x = numpy.zeros((maxlen, n_samples)).astype('int64')
+    # 句子词汇对应矩阵的坐标全是1 &则会取出有用的部分
     x_mask = numpy.zeros((maxlen, n_samples)).astype(theano.config.floatX)
+    # 每个句子存放一列
     for idx, s in enumerate(seqs):
         x[:lengths[idx], idx] = s
         x_mask[:lengths[idx], idx] = 1.

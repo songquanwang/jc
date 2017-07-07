@@ -89,9 +89,9 @@ def init_params(options):
     Global (not LSTM) parameter. For the embeding and the classifier.
     """
     params = OrderedDict()
-    # embedding 10000*128
+    # embedding 10000*128  10000=最长句子* 最小批次
     randn = numpy.random.rand(options['n_words'], options['dim_proj'])
-    # 10000*128 初始化非常小的数值
+    # 10000*128 初始化非常小的数值；输入层
     params['Wemb'] = (0.01 * randn).astype(config.floatX)
     # lstm 调用 param_init_lstm
     params = get_layer(options['encoder'])[0](options, params, prefix=options['encoder'])
@@ -153,6 +153,15 @@ def param_init_lstm(options, params, prefix='lstm'):
 
 
 def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
+    """
+
+    :param tparams:
+    :param state_below: Wemb 权重矩阵的切片10000*128 --- [max_len(句子), 16, 128]  max_len(句子)*16 <10000
+    :param options:
+    :param prefix:lstm
+    :param mask:  max_len(句子)*16(批）
+    :return:
+    """
     nsteps = state_below.shape[0]
     if state_below.ndim == 3:
         n_samples = state_below.shape[1]
@@ -167,24 +176,39 @@ def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
         return _x[:, n * dim:(n + 1) * dim]
 
     def _step(m_, x_, h_, c_):
+        """
+
+        :param m_: 16 一组句子一个掩码
+        :param x_: 16*512 (一组句子一个单词)
+        :param h_: 16*128
+        :param c_: 16*128
+        :return:
+        """
+        # ht-1 +xt  16*512
         preact = tensor.dot(h_, tparams[_p(prefix, 'U')])
+        # 每行都加上x值
         preact += x_
-
+        # 16*第1个128列
         i = tensor.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))
+        # 16*第2个128列
         f = tensor.nnet.sigmoid(_slice(preact, 1, options['dim_proj']))
+        # 16*第3个128列
         o = tensor.nnet.sigmoid(_slice(preact, 2, options['dim_proj']))
+        # 16*第4个128列
         c = tensor.tanh(_slice(preact, 3, options['dim_proj']))
-
+        # * 是数乘
         c = f * c_ + i * c
+        # 16*128
         c = m_[:, None] * c + (1. - m_)[:, None] * c_
 
         h = o * tensor.tanh(c)
+        # 16*128
         h = m_[:, None] * h + (1. - m_)[:, None] * h_
 
         return h, c
 
-    state_below = (tensor.dot(state_below, tparams[_p(prefix, 'W')]) +
-                   tparams[_p(prefix, 'b')])
+    # [max_len(句子), 16, 128]  * （128*512）+512  ----max_len*16*512
+    state_below = (tensor.dot(state_below, tparams[_p(prefix, 'W')]) + tparams[_p(prefix, 'b')])
 
     dim_proj = options['dim_proj']
     rval, updates = theano.scan(_step,
@@ -197,6 +221,7 @@ def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
                                                            dim_proj)],
                                 name=_p(prefix, '_layers'),
                                 n_steps=nsteps)
+    # raval 0 ??
     return rval[0]
 
 
@@ -368,31 +393,30 @@ def build_model(tparams, options):
     x = tensor.matrix('x', dtype='int64')
     mask = tensor.matrix('mask', dtype=config.floatX)
     y = tensor.vector('y', dtype='int64')
-
+    # 行 step；列 sample 每列一个句子
     n_timesteps = x.shape[0]
     n_samples = x.shape[1]
-
-    emb = tparams['Wemb'][x.flatten()].reshape([n_timesteps,
-                                                n_samples,
-                                                options['dim_proj']])
-    proj = get_layer(options['encoder'])[1](tparams, emb, options,
-                                            prefix=options['encoder'],
-                                            mask=mask)
+    # max_len*16*128
+    emb = tparams['Wemb'][x.flatten()].reshape([n_timesteps, n_samples, options['dim_proj']])
+    # 16*128
+    proj = get_layer(options['encoder'])[1](tparams, emb, options, prefix=options['encoder'], mask=mask)
+    # 平均权值
     if options['encoder'] == 'lstm':
         proj = (proj * mask[:, :, None]).sum(axis=0)
         proj = proj / mask.sum(axis=0)[:, None]
     if options['use_dropout']:
         proj = dropout_layer(proj, use_noise, trng)
-
+    # 预测结果向量   16*128--输出-- 128*2  输出16*2维向量 概率
     pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U']) + tparams['b'])
 
     f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')
+    # 根据概率求出分类号 0 1
     f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')
 
     off = 1e-8
     if pred.dtype == 'float16':
         off = 1e-6
-
+    # 一组n_samples 16个预测值平均误差 正确的黛绿的概率越大，损失函数越小
     cost = -tensor.log(pred[tensor.arange(n_samples), y] + off).mean()
 
     return use_noise, x, mask, y, f_pred_prob, f_pred, cost
@@ -433,6 +457,7 @@ def pred_error(f_pred, prepare_data, data, iterator, verbose=False):
                                   numpy.array(data[1])[valid_index],
                                   maxlen=None)
         preds = f_pred(x, mask)
+        # 真实的label
         targets = numpy.array(data[1])[valid_index]
         valid_err += (preds == targets).sum()
     valid_err = 1. - numpy_floatX(valid_err) / len(data[0])
@@ -449,7 +474,7 @@ def train_lstm(
 
         lrate=0.0001,  # Learning rate for sgd (not used for adadelta and rmsprop)
         n_words=10000,  # Vocabulary size
-        optimizer=adadelta,  # sgd, adadelta and rmsprop available, sgd very hard to use, not recommanded (probably need momentum and decaying learning rate).
+        optimizer=adadelta,  # sgd, adadelta and rmsprop available, sgd very hard to use, not recommanded (probably need momentum and decaying learning rate).momentum：加速梯度下降的系数
         encoder='lstm',  # TODO: can be removed must be lstm.
         saveto='lstm_model.npz',  # The best model will be saved there
 
@@ -504,7 +529,8 @@ def train_lstm(
 
     # use_noise is for dropout
     (use_noise, x, mask, y, f_pred_prob, f_pred, cost) = build_model(tparams, model_options)
-
+    # weight_decay权重衰减-防止过拟合，把整体权重作为一个正则项，来控制模型的复杂度
+    # decay_c是一个正则因子，来控制模型的复杂度 为零 不限制模型复杂性
     if decay_c > 0.:
         decay_c = theano.shared(numpy_floatX(decay_c), name='decay_c')
         weight_decay = 0.
@@ -547,6 +573,7 @@ def train_lstm(
             n_samples = 0
 
             # Get new shuffled index for the training set.
+            # 1998个训练样本16个一批，分成125批
             kf = get_minibatches_idx(len(train[0]), batch_size, shuffle=True)
 
             for _, train_index in kf:
@@ -560,9 +587,10 @@ def train_lstm(
                 # Get the data in numpy.ndarray format
                 # This swap the axis!
                 # Return something of shape (minibatch maxlen, n samples)
+                # x 转成 批次 每批16个
                 x, mask, y = prepare_data(x, y)
                 n_samples += x.shape[1]
-
+                # 批量梯度调整一次
                 cost = f_grad_shared(x, mask, y)
                 f_update(lrate)
 
@@ -587,8 +615,7 @@ def train_lstm(
                 if numpy.mod(uidx, validFreq) == 0:
                     use_noise.set_value(0.)
                     train_err = pred_error(f_pred, prepare_data, train, kf)
-                    valid_err = pred_error(f_pred, prepare_data, valid,
-                                           kf_valid)
+                    valid_err = pred_error(f_pred, prepare_data, valid, kf_valid)
                     test_err = pred_error(f_pred, prepare_data, test, kf_test)
 
                     history_errs.append([valid_err, test_err])
